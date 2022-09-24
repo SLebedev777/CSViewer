@@ -13,4 +13,4 @@ list(APPEND SOURCES
 # Add source to this project's executable.
 add_executable (${BINARY} ${SOURCES})
 
-# TODO: Add tests and install targets if needed.
+add_library(${BINARY}_lib STATIC ${SOURCES})
