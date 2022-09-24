@@ -167,5 +167,8 @@ CmdLineArgsParseResult ParseCmdLineArgs(int argc, char** argv)
 		else
 			ThrowParseOptionException(token_str);
 	}
+	if (!is_found_input_filename)
+		throw std::runtime_error("Missing required parameter: input_filename");
+
 	return CmdLineArgsParseResult{ parsed_options, input_filename};
  }
