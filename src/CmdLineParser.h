@@ -31,6 +31,8 @@ using CmdLineOptionParseResultChar = CmdLineOptionParseResult<char>;
 using CmdLineOptionParseResultString = CmdLineOptionParseResult<std::string>;
 using CmdLineOptionParseResultNumber = CmdLineOptionParseResult<size_t>;
 
+template <typename T>
+bool operator==(const CmdLineOptionParseResult<T>& left, const CmdLineOptionParseResult<T>& right);
 
 // полиморфный объект, содержащий один из типов распарсенных опций, заданных пользователем
 using CmdLineOptionParseResultVariant = std::variant<CmdLineOptionParseResultChar, CmdLineOptionParseResultString, CmdLineOptionParseResultNumber>;
@@ -118,5 +120,8 @@ struct CmdLineArgsParseResult
 	std::vector<CmdLineOptionParseResultVariant> options;
 	std::string input_filename;
 };
+
+bool operator==(const CmdLineArgsParseResult& left, const CmdLineArgsParseResult& right);
+
 
 CmdLineArgsParseResult ParseCmdLineArgs(int argc, char** argv);

@@ -48,6 +48,13 @@ namespace
 		return it != options.end();
 	}
 
+	template <typename Var>
+	bool IsHelpOptionExist(const std::vector<Var>& options)
+	{
+		return IsOptionExistByKey(options, 'H');
+	}
+
+
 	std::optional<CmdLineOptionType> CmdLineOptionKeyToType(char key)
 	{
 		std::optional<CmdLineOptionType> type;
@@ -78,6 +85,20 @@ namespace
 }
 
 
+
+bool operator==(const CmdLineArgsParseResult& left, const CmdLineArgsParseResult& right)
+{
+	return (left.input_filename == right.input_filename) && (left.options == right.options);
+}
+
+
+template <typename T>
+bool operator==(const CmdLineOptionParseResult<T>& left, const CmdLineOptionParseResult<T>& right)
+{
+	return (left.key == right.key) && (left.value == right.value);
+}
+
+
 CmdLineOptionParseResultVariant ParseOption(const std::string& option_str)
 {
 	char key;
@@ -103,15 +124,22 @@ CmdLineOptionParseResultVariant ParseOption(const std::string& option_str)
 			ThrowParseOptionException(option_str, "Bad format for non arg option");
 	}
 
+	std::string opt_type_str{ std::move(std::to_string(int(*opt_type))) };
+
 	switch (*opt_type)
 	{
+	case CmdLineOptionType::CMDLOPT_NOARG:
+	{
+		return CmdLineOptionParseResultChar{ key, {} };
+		break;
+	}
 	case CmdLineOptionType::CMDLOPT_CHAR:
 	{
 		char c;
 		if (iss >> c)
 			return CmdLineOptionParseResultChar{ key, c };
 		else
-			ThrowParseOptionException(option_str);
+			ThrowParseOptionException(option_str, "Type: " + opt_type_str);
 		break;
 	}
 	case CmdLineOptionType::CMDLOPT_STR:
@@ -120,7 +148,7 @@ CmdLineOptionParseResultVariant ParseOption(const std::string& option_str)
 		if (iss >> s)
 			return CmdLineOptionParseResultString{ key, s };
 		else
-			ThrowParseOptionException(option_str);
+			ThrowParseOptionException(option_str, "Type: " + opt_type_str);
 		break;
 	}
 	case CmdLineOptionType::CMDLOPT_NUM:
@@ -129,11 +157,11 @@ CmdLineOptionParseResultVariant ParseOption(const std::string& option_str)
 		if (iss >> n)
 			return CmdLineOptionParseResultNumber{ key, n };
 		else
-			ThrowParseOptionException(option_str);
+			ThrowParseOptionException(option_str, "Type: " + opt_type_str);
 		break;
 	}
 	default:
-		ThrowParseOptionException(option_str);
+		ThrowParseOptionException(option_str, "Type: " + opt_type_str);
 	}
 
 }
@@ -167,7 +195,7 @@ CmdLineArgsParseResult ParseCmdLineArgs(int argc, char** argv)
 		else
 			ThrowParseOptionException(token_str);
 	}
-	if (!is_found_input_filename)
+	if (!is_found_input_filename && !IsHelpOptionExist(parsed_options))
 		throw std::runtime_error("Missing required parameter: input_filename");
 
 	return CmdLineArgsParseResult{ parsed_options, input_filename};
