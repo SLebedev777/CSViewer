@@ -71,8 +71,10 @@ using CmdLineOptionDescriptionNumber = CmdLineOptionDescription<size_t>;
 // полиморфный объект, содержащий одну из доступных опций, поддерживаемых программой
 using CmdLineOptionDescriptionVariant = std::variant<CmdLineOptionDescriptionChar, CmdLineOptionDescriptionString, CmdLineOptionDescriptionNumber>;
 
-// список доступных опций, поддерживаемых программой
-extern const std::vector<CmdLineOptionDescriptionVariant> g_ValidOptions;
+using CmdLineOptionDescriptionContainer = std::unordered_map<OptionKey, CmdLineOptionDescriptionVariant>;
+
+// словарь доступных опций, поддерживаемых программой
+extern const CmdLineOptionDescriptionContainer g_ValidOptions;
 
 
 template <typename T>
@@ -134,8 +136,9 @@ namespace csviewer_internal
 
 	bool IsTokenOption(const std::string& str, OptionKey& key_out);
 
-	template <typename Var>
-	auto FindOptionByKey(const std::vector<Var>& options, OptionKey key);
+	std::optional<CmdLineOptionDescriptionVariant> FindOptionByKey(const CmdLineOptionDescriptionContainer& options, OptionKey key);
+
+	bool IsOptionExistByKey(const CmdLineOptionDescriptionContainer& options, OptionKey key);
 
 	template <typename Var>
 	bool IsOptionExistByKey(const std::vector<Var>& options, OptionKey key);
@@ -143,7 +146,7 @@ namespace csviewer_internal
 	template <typename Var>
 	bool IsHelpOptionExist(const std::vector<Var>& options);
 
-	std::optional<CmdLineOptionType> CmdLineOptionKeyToType(OptionKey key);
+	std::optional<CmdLineOptionType> CmdLineOptionKeyToType(const CmdLineOptionDescriptionContainer& options, OptionKey key);
 
 	template<typename T>
 	bool IsOptionValueAllowed(const CmdLineOptionDescriptionVariant& var, const T& value);

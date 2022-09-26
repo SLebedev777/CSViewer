@@ -4,12 +4,12 @@
 #include <algorithm>
 
 
-// список доступных опций, поддерживаемых программой
-const std::vector<CmdLineOptionDescriptionVariant> g_ValidOptions = {
-	CmdLineOptionDescriptionChar{ 'H', CmdLineOptionType::CMDLOPT_NOARG, {}, "Print help" },
-	CmdLineOptionDescriptionString{ 'E', CmdLineOptionType::CMDLOPT_STR, {"cp1251", "utf8"}, "Set encoding for reading input CSV file"},
-	CmdLineOptionDescriptionChar{ 'D', CmdLineOptionType::CMDLOPT_CHAR, {}, "Set delimiter" },
-	CmdLineOptionDescriptionChar{ 'Q', CmdLineOptionType::CMDLOPT_CHAR, {'"', '\''}, "Set quoting char to enclose strings"}
+// словарь доступных опций, поддерживаемых программой
+const CmdLineOptionDescriptionContainer g_ValidOptions = {
+	{'H', CmdLineOptionDescriptionChar{'H', CmdLineOptionType::CMDLOPT_NOARG, {}, "Print help"}},
+	{'E', CmdLineOptionDescriptionString{'E', CmdLineOptionType::CMDLOPT_STR, {"cp1251", "utf8"}, "Set encoding for reading input CSV file"}},
+	{'D', CmdLineOptionDescriptionChar{'D', CmdLineOptionType::CMDLOPT_CHAR, {}, "Set delimiter"}},
+	{'Q', CmdLineOptionDescriptionChar{'Q', CmdLineOptionType::CMDLOPT_CHAR, {'"', '\''}, "Set quoting char to enclose strings"}}
 };
 
 
@@ -33,29 +33,36 @@ namespace csviewer_internal
 		return false;
 	}
 
+
+	std::optional<CmdLineOptionDescriptionVariant> FindOptionByKey(const CmdLineOptionDescriptionContainer& options, OptionKey key)
+	{
+		auto it = options.find(key);
+		if (it != options.end())
+			return std::optional<CmdLineOptionDescriptionVariant>(it->second);
+		return {};
+	}
+
+
+	bool IsOptionExistByKey(const CmdLineOptionDescriptionContainer& options, OptionKey key)
+	{
+		auto it = options.find(key);
+		return it != options.end();
+	}
+
 	template <typename Var>
-	auto FindOptionByKey(const std::vector<Var>& options, OptionKey key)
+	bool IsOptionExistByKey(const std::vector<Var>& options, OptionKey key)
 	{
 		auto it = std::find_if(options.begin(), options.end(), [&key](const auto& option) {
 			OptionKey option_key;
 			auto key_getter = [&option_key](const auto& option) {
 				option_key = option.key;
-			};
+				};
 			std::visit(key_getter, option);
 			return option_key == key;
 			}
 		);
-		return it;
-	}
-
-
-	template <typename Var>
-	bool IsOptionExistByKey(const std::vector<Var>& options, OptionKey key)
-	{
-		auto it = FindOptionByKey(options, key);
 		return it != options.end();
 	}
-
 
 	template <typename Var>
 	bool IsHelpOptionExist(const std::vector<Var>& options)
@@ -64,33 +71,21 @@ namespace csviewer_internal
 	}
 
 
-	std::optional<CmdLineOptionType> CmdLineOptionKeyToType(OptionKey key)
+	std::optional<CmdLineOptionType> CmdLineOptionKeyToType(const CmdLineOptionDescriptionContainer& options, OptionKey key)
 	{
 		std::optional<CmdLineOptionType> type;
 
-		auto type_getter = [&type](const auto& var) {
-			type = var.type;
-		};
-
-		auto it = std::find_if(g_ValidOptions.begin(), g_ValidOptions.end(), [&key](const auto& option) {
-			OptionKey option_key;
-			auto key_getter = [&option_key](const auto& var) {
-				option_key = var.key;
-			};
-			std::visit(key_getter, option);
-			return option_key == key;
-			}
-		);
-		if (it != g_ValidOptions.end())
+		if (auto opt = FindOptionByKey(options, key); opt)
 		{
 			auto type_getter = [&type](const auto& var) {
 				type = var.type;
 			};
-			std::visit(type_getter, *it);
+			std::visit(type_getter, *opt);
 			return type;
 		}
 		return {};
 	}
+
 
 	template<typename T>
 	bool IsOptionValueAllowed(const CmdLineOptionDescriptionVariant& var, const T& value)
@@ -107,7 +102,6 @@ namespace csviewer_internal
 			return false;
 	}
 }
-
 
 
 bool operator==(const CmdLineArgsParseResult& left, const CmdLineArgsParseResult& right)
@@ -137,7 +131,7 @@ CmdLineOptionParseResultVariant ParseOption(const std::string& option_str)
 
 	iss >> defis >> key;
 
-	auto opt_type = CmdLineOptionKeyToType(key);
+	auto opt_type = CmdLineOptionKeyToType(g_ValidOptions, key);
 	if (!opt_type)
 		ThrowParseOptionException(option_str, "Unknown key");
 
