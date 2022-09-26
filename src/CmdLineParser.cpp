@@ -20,7 +20,7 @@ namespace csviewer_internal
 		throw std::runtime_error("Error parsing command line option. " + message + ". Option: " + option_str);
 	}
 
-	bool IsTokenOption(const std::string& str, char& key_out)
+	bool IsTokenOption(const std::string& str, OptionKey& key_out)
 	{
 		if (str.size() < 2)
 			return false;
@@ -34,10 +34,10 @@ namespace csviewer_internal
 	}
 
 	template <typename Var>
-	auto FindOptionByKey(const std::vector<Var>& options, char key)
+	auto FindOptionByKey(const std::vector<Var>& options, OptionKey key)
 	{
 		auto it = std::find_if(options.begin(), options.end(), [&key](const auto& option) {
-			char option_key;
+			OptionKey option_key;
 			auto key_getter = [&option_key](const auto& option) {
 				option_key = option.key;
 			};
@@ -50,7 +50,7 @@ namespace csviewer_internal
 
 
 	template <typename Var>
-	bool IsOptionExistByKey(const std::vector<Var>& options, char key)
+	bool IsOptionExistByKey(const std::vector<Var>& options, OptionKey key)
 	{
 		auto it = FindOptionByKey(options, key);
 		return it != options.end();
@@ -64,7 +64,7 @@ namespace csviewer_internal
 	}
 
 
-	std::optional<CmdLineOptionType> CmdLineOptionKeyToType(char key)
+	std::optional<CmdLineOptionType> CmdLineOptionKeyToType(OptionKey key)
 	{
 		std::optional<CmdLineOptionType> type;
 
@@ -73,7 +73,7 @@ namespace csviewer_internal
 		};
 
 		auto it = std::find_if(g_ValidOptions.begin(), g_ValidOptions.end(), [&key](const auto& option) {
-			char option_key;
+			OptionKey option_key;
 			auto key_getter = [&option_key](const auto& var) {
 				option_key = var.key;
 			};
@@ -127,7 +127,7 @@ CmdLineOptionParseResultVariant ParseOption(const std::string& option_str)
 {
 	using namespace csviewer_internal;
 
-	char key;
+	OptionKey key;
 
 	if (!IsTokenOption(option_str, key))
 		ThrowParseOptionException(option_str, "Defis not found");
@@ -214,7 +214,7 @@ CmdLineArgsParseResult ParseCmdLineArgs(int argc, char** argv)
 	for (int i = 1; i < argc; i++)
 	{
 		std::string token_str(argv[i]);
-		char key;
+		OptionKey key;
 		if (IsTokenOption(token_str, key))
 		{
 			if (IsOptionExistByKey(parsed_options, key))

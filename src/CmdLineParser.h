@@ -17,13 +17,14 @@ enum class CmdLineOptionType
 	CMDLOPT_NUM  // -S3
 };
 
+using OptionKey = char;
 
 // результат разбора аргумента командной строки в опцию
 // это просто результат парсинга, без привязки к конкретной опции с конкретным описанием и логикой
 template <typename T>
 struct CmdLineOptionParseResult
 {
-	const char key;  // ключ опции (первая буква)
+	const OptionKey key;  // ключ опции (первая буква)
 	const std::optional<T> value;  // значение, идущее после ключа (может и отсутствовать)
 };
 
@@ -48,7 +49,7 @@ struct CmdLineOptionDescription
 {
 	using value_type = T;
 
-	CmdLineOptionDescription(const char _key, const CmdLineOptionType _type,
+	CmdLineOptionDescription(const OptionKey& _key, const CmdLineOptionType _type,
 		std::vector<T>&& _allowed_values = {}, std::string&& _hint = "")
 		: key(_key)
 		, type(_type)
@@ -56,7 +57,7 @@ struct CmdLineOptionDescription
 		, hint(std::move(_hint))
 	{}
 
-	const char key;
+	const OptionKey key;
 	const CmdLineOptionType type;
 	std::vector<T> allowed_values;
 	const std::string hint;
@@ -131,18 +132,18 @@ namespace csviewer_internal
 {
 	void ThrowParseOptionException(const std::string& option_str, const std::string& message = "");
 
-	bool IsTokenOption(const std::string& str, char& key_out);
+	bool IsTokenOption(const std::string& str, OptionKey& key_out);
 
 	template <typename Var>
-	auto FindOptionByKey(const std::vector<Var>& options, char key);
+	auto FindOptionByKey(const std::vector<Var>& options, OptionKey key);
 
 	template <typename Var>
-	bool IsOptionExistByKey(const std::vector<Var>& options, char key);
+	bool IsOptionExistByKey(const std::vector<Var>& options, OptionKey key);
 
 	template <typename Var>
 	bool IsHelpOptionExist(const std::vector<Var>& options);
 
-	std::optional<CmdLineOptionType> CmdLineOptionKeyToType(char key);
+	std::optional<CmdLineOptionType> CmdLineOptionKeyToType(OptionKey key);
 
 	template<typename T>
 	bool IsOptionValueAllowed(const CmdLineOptionDescriptionVariant& var, const T& value);
