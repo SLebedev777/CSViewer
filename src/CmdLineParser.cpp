@@ -13,9 +13,9 @@ const std::vector<CmdLineOptionDescriptionVariant> g_ValidOptions = {
 };
 
 
-namespace
+namespace csviewer_internal
 {
-	void ThrowParseOptionException(const std::string& option_str, const std::string& message = "")
+	void ThrowParseOptionException(const std::string& option_str, const std::string& message)
 	{
 		throw std::runtime_error("Error parsing command line option. " + message + ". Option: " + option_str);
 	}
@@ -34,7 +34,7 @@ namespace
 	}
 
 	template <typename Var>
-	bool IsOptionExistByKey(const std::vector<Var>& options, char key)
+	auto FindOptionByKey(const std::vector<Var>& options, char key)
 	{
 		auto it = std::find_if(options.begin(), options.end(), [&key](const auto& option) {
 			char option_key;
@@ -45,8 +45,17 @@ namespace
 			return option_key == key;
 			}
 		);
+		return it;
+	}
+
+
+	template <typename Var>
+	bool IsOptionExistByKey(const std::vector<Var>& options, char key)
+	{
+		auto it = FindOptionByKey(options, key);
 		return it != options.end();
 	}
+
 
 	template <typename Var>
 	bool IsHelpOptionExist(const std::vector<Var>& options)
@@ -82,6 +91,21 @@ namespace
 		}
 		return {};
 	}
+
+	template<typename T>
+	bool IsOptionValueAllowed(const CmdLineOptionDescriptionVariant& var, const T& value)
+	{
+		if (const auto obj(std::get_if<CmdLineOptionDescription<T>>(&var)); obj)
+		{
+			const auto& allowed = obj->allowed_values;
+			if (allowed.empty())
+				return true;
+			auto result = std::find(allowed.begin(), allowed.end(), value);
+			return (result != allowed.end()) ? true : false;
+		}
+		else
+			return false;
+	}
 }
 
 
@@ -101,6 +125,8 @@ bool operator==(const CmdLineOptionParseResult<T>& left, const CmdLineOptionPars
 
 CmdLineOptionParseResultVariant ParseOption(const std::string& option_str)
 {
+	using namespace csviewer_internal;
+
 	char key;
 
 	if (!IsTokenOption(option_str, key))
@@ -124,6 +150,8 @@ CmdLineOptionParseResultVariant ParseOption(const std::string& option_str)
 			ThrowParseOptionException(option_str, "Bad format for non arg option");
 	}
 
+	auto opt_it = FindOptionByKey(g_ValidOptions, key);
+
 	std::string opt_type_str{ std::move(std::to_string(int(*opt_type))) };
 
 	switch (*opt_type)
@@ -137,7 +165,10 @@ CmdLineOptionParseResultVariant ParseOption(const std::string& option_str)
 	{
 		char c;
 		if (iss >> c)
-			return CmdLineOptionParseResultChar{ key, c };
+			if (IsOptionValueAllowed(*opt_it, c))
+				return CmdLineOptionParseResultChar{ key, c };
+			else
+				ThrowParseOptionException(option_str, "Value not allowed: " + c);
 		else
 			ThrowParseOptionException(option_str, "Type: " + opt_type_str);
 		break;
@@ -146,7 +177,10 @@ CmdLineOptionParseResultVariant ParseOption(const std::string& option_str)
 	{
 		std::string s;
 		if (iss >> s)
-			return CmdLineOptionParseResultString{ key, s };
+			if (IsOptionValueAllowed(*opt_it, s))
+				return CmdLineOptionParseResultString{ key, s };
+			else
+				ThrowParseOptionException(option_str, "Value not allowed: " + s);
 		else
 			ThrowParseOptionException(option_str, "Type: " + opt_type_str);
 		break;
@@ -168,6 +202,8 @@ CmdLineOptionParseResultVariant ParseOption(const std::string& option_str)
 
 CmdLineArgsParseResult ParseCmdLineArgs(int argc, char** argv)
 {
+	using namespace csviewer_internal;
+
 	if (argc < 2)
 		throw std::runtime_error("Too few command line arguments.");
 

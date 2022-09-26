@@ -125,3 +125,25 @@ bool operator==(const CmdLineArgsParseResult& left, const CmdLineArgsParseResult
 
 
 CmdLineArgsParseResult ParseCmdLineArgs(int argc, char** argv);
+
+
+namespace csviewer_internal
+{
+	void ThrowParseOptionException(const std::string& option_str, const std::string& message = "");
+
+	bool IsTokenOption(const std::string& str, char& key_out);
+
+	template <typename Var>
+	auto FindOptionByKey(const std::vector<Var>& options, char key);
+
+	template <typename Var>
+	bool IsOptionExistByKey(const std::vector<Var>& options, char key);
+
+	template <typename Var>
+	bool IsHelpOptionExist(const std::vector<Var>& options);
+
+	std::optional<CmdLineOptionType> CmdLineOptionKeyToType(char key);
+
+	template<typename T>
+	bool IsOptionValueAllowed(const CmdLineOptionDescriptionVariant& var, const T& value);
+}
