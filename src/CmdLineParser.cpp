@@ -9,7 +9,10 @@ const CmdLineOptionDescriptionContainer g_ValidOptions = {
 	{'H', CmdLineOptionDescriptionChar{'H', CmdLineOptionType::CMDLOPT_NOARG, {}, "Print help"}},
 	{'E', CmdLineOptionDescriptionString{'E', CmdLineOptionType::CMDLOPT_STR, {"cp1251", "utf8"}, "Set encoding for reading input CSV file"}},
 	{'D', CmdLineOptionDescriptionChar{'D', CmdLineOptionType::CMDLOPT_CHAR, {}, "Set delimiter"}},
-	{'Q', CmdLineOptionDescriptionChar{'Q', CmdLineOptionType::CMDLOPT_CHAR, {'"', '\''}, "Set quoting char to enclose strings"}}
+	{'Q', CmdLineOptionDescriptionChar{'Q', CmdLineOptionType::CMDLOPT_CHAR, {'"', '\''}, "Set quoting char to enclose strings"}},
+	{'C', CmdLineOptionDescriptionChar{'C', CmdLineOptionType::CMDLOPT_NOARG, {}, "Read column names from the 1st line of file"}},
+	{'B', CmdLineOptionDescriptionString{'B', CmdLineOptionType::CMDLOPT_STR, {"raise", "warn", "skip"}, "How to process bad lines"}},
+	{'S', CmdLineOptionDescriptionNumber{'S', CmdLineOptionType::CMDLOPT_NUM, {}, "Skip first N lines of file"}}
 };
 
 
