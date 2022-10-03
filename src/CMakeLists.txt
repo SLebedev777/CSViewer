@@ -8,6 +8,10 @@ list(APPEND SOURCES
 	"CmdLineParser.h"
 	"CmdLineParser.cpp"
 	"Settings.h"
+	"Range.h"
+	"Range.cpp"
+	"CSV.h"
+	"CSV.cpp"
 )
 
 # Add source to this project's executable.

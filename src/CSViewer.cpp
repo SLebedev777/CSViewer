@@ -17,6 +17,17 @@ int main(int argc, char** argv)
 
 		for (const auto& option : args_parse_result.options)
 			std::visit(CmdLineOptionParseResultVariantPrinter, option);
+
+		// model = LoadCSV(args_parse_result);
+		// while(true)
+		// {
+		// prompt();
+		// command = ParseCommand(cin);
+		// if (command == QUIT)  break;
+		// result = model->execute(command);
+		// view = View(result);
+		// view->print();
+		// }
 	}
 	catch (std::exception& ex)
 	{
