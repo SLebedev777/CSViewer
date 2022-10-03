@@ -78,7 +78,7 @@ public:
 		cell_iterator end();
 
 	private:
-		const CSV* csv;
+		const CSVContainer* csv;
 		size_t row_index;
 		RangeCollection col_ranges;
 	};
@@ -91,14 +91,15 @@ public:
 		friend class CSVContainer;
 
 	public:
+		static const bool AXIS_ROWS = false;
+		static const bool AXIS_COLS = true;
+
 		Frame(const CSVContainer* csv, size_t row_from = 0, size_t row_to = END, size_t col_from = 0, size_t col_to = END);
-		Frame(const CSVContainer* csv, const Range& rows);
-		Frame(const CSVContainer* csv, const Range& cols);
+		Frame(const CSVContainer* csv, const Range& range, bool axis = AXIS_ROWS);
 		Frame(const CSVContainer* csv, const Range& rows, const Range& cols);
-		Frame(const CSVContainer* csv, const RangeCollection& row_ranges);
-		Frame(const CSVContainer* csv, RangeCollection&& row_ranges);
-		Frame(const CSVContainer* csv, const std::vector<Range>& col_ranges);
-		Frame(const CSVContainer* csv, RangeCollection&& col_ranges);
+		Frame(const CSVContainer* csv, const RangeCollection& ranges, bool axis = AXIS_ROWS);
+		Frame(const CSVContainer* csv, RangeCollection&& ranges, bool axis = AXIS_ROWS);
+		Frame(const CSVContainer* csv, const RangeCollection& row_ranges, const RangeCollection& col_ranges);
 
 		// for (const auto& row : frame)
 		//     for (const auto& cell : row)

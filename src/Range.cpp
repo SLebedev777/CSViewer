@@ -1,6 +1,21 @@
 #include "Range.h"
 
 
+bool operator==(const Range& x, const Range& y)
+{
+	return (x.from == y.from) && (x.to == y.to);
+}
+
+bool operator!=(const Range& x, const Range& y)
+{
+	return !(x == y);
+}
+
+bool operator<(const Range& x, const Range& y)
+{
+	return x.to <= y.from;
+}
+
 bool RangeCollection::insert(const Range& range)
 {
 	if (try_push_back(range))
