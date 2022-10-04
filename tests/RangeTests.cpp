@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "Range.h"
-#include <type_traits>
+#include <algorithm>
 
 
 TEST(RangeTests, RangeIsEmpty)
@@ -61,4 +61,33 @@ TEST(RangeTests, RangeOperators)
 	EXPECT_TRUE(r < Range(r.to, r.to + 1));
 	EXPECT_FALSE(r < Range(12, 12));
 	EXPECT_TRUE(r == Range(10, 15));
+}
+
+TEST(RangeCollectionTests, RangeCollectionChainIterator)
+{
+	{
+		RangeCollection rc;
+		rc.insert(Range(10, 15));
+		rc.insert(Range(20, 23));
+		rc.insert(Range(30, 31));
+	
+		std::vector<size_t> expected{ 10, 11, 12, 13, 14, 20, 21, 22, 30 };
+		std::vector<size_t> result;
+		std::copy(rc.chainBegin(), rc.chainEnd(), std::back_inserter(result));
+		EXPECT_EQ(expected, result);
+	}
+	{
+		RangeCollection rc;
+		rc.insert(Range(1, 2));
+		rc.insert(Range(2, 5));
+		rc.insert(Range(6, 6));
+		rc.insert(Range(10, 13));
+		rc.insert(Range(20, 20));
+
+		std::vector<size_t> expected{ 1, 2, 3, 4, 6, 10, 11, 12, 20 };
+		std::vector<size_t> result;
+		std::copy(rc.chainBegin(), rc.chainEnd(), std::back_inserter(result));
+		EXPECT_EQ(expected, result);
+	}
+
 }

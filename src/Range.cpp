@@ -55,11 +55,24 @@ bool RangeCollection::try_push_back(const Range& range)
 
 RangeCollection::chain_iterator& RangeCollection::chain_iterator::operator++()
 {
+	if (coll_it == coll_it_end)
+	{
+		range_it = Range::const_iterator(0);
+		return *this;
+	}
+
 	++range_it;
-	if (range_it == (*coll_it).cend())
+	if ((range_it == (*coll_it).cend()) || coll_it->isEmpty())
 	{
 		++coll_it;
-		range_it = (*coll_it).cbegin();
+		if (coll_it == coll_it_end)
+		{
+			range_it = Range::const_iterator(0);
+			return *this;
+		}
+
+		range_it = coll_it->begin();
 	}
+
 	return *this;
 }

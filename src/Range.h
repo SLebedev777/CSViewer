@@ -96,9 +96,10 @@ public:
 		using reference = const value_type&;
 		using iterator_category = std::forward_iterator_tag;
 
-		chain_iterator(const RangeCollection::const_iterator& coll_it, const Range::const_iterator& range_it)
-			: coll_it(coll_it)
-			, range_it(range_it)
+		chain_iterator(const RangeCollection::const_iterator& coll_it_begin, const RangeCollection::const_iterator& coll_it_end)
+			: coll_it(coll_it_begin)
+			, coll_it_end(coll_it_end)
+			, range_it((coll_it_begin != coll_it_end) ? coll_it_begin->begin() : Range::const_iterator(0))
 		{}
 		reference operator*() const { return *range_it; }
 		chain_iterator& operator++();
@@ -106,9 +107,12 @@ public:
 		bool operator!=(const chain_iterator& other) const { return !(*this == other); }
 
 	private:
-		RangeCollection::const_iterator coll_it;  // iterates over ranges in list
+		RangeCollection::const_iterator coll_it, coll_it_end;  // iterates over ranges in list
 		Range::const_iterator range_it;  // iterates within current range
 	};
+
+	chain_iterator chainBegin() { return chain_iterator(cbegin(), cend()); }
+	chain_iterator chainEnd() { return chain_iterator(cend(), cend()); }
 
 private:
 	bool try_push_back(const Range& range);
