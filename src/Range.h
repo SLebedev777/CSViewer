@@ -17,14 +17,15 @@ struct Range
 
 	size_t size() const { return to - from; }
 	bool isEmpty() const { return from == to; }
-
+	size_t lastIncluded() const { return (to > 0) ? (to - 1) : 0; }
+	
 	bool contains(size_t value) const { return (value >= from) && (value < to); }
 	bool intersects(const Range& other) const
 	{
 		if (contains(other.from) ||
-			contains(other.to) ||
+			contains(other.lastIncluded()) ||
 			other.contains(from) ||
-			other.contains(to))
+			other.contains(lastIncluded()))
 		{
 			return true;
 		}
@@ -55,6 +56,8 @@ struct Range
 
 	const_iterator cbegin() const { return Range::const_iterator(from); }
 	const_iterator cend() const { return Range::const_iterator(to); }
+	const_iterator begin() const { return cbegin(); }  // to use range-based for loop
+	const_iterator end() const { return cend(); }
 
 	const size_t from;
 	const size_t to;
