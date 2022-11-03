@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
+#include <limits>
 #include "CmdLineParser.h"
 #include "Range.h"
 
@@ -49,7 +50,7 @@ using Cell = std::string;
 class CSVContainer
 {
 public:
-	static const size_t END = static_cast<size_t>(-1);
+	static const size_t END = std::numeric_limits<size_t>::max();
 
 	CSVContainer(const CSVLoadingSettings& settings);
 
