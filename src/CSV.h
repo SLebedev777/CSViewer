@@ -108,8 +108,8 @@ public:
 
 	private:
 		const CSVContainer* csv;
-		std::vector<Range> row_ranges;
-		std::vector<Range> col_ranges;
+		RangeCollection row_ranges;
+		RangeCollection col_ranges;
 	};
 
 private:
