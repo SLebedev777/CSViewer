@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __CSVIEWER_CSV_H__
+#define __CSVIEWER_CSV_H__
 
 #include <vector>
 #include <string>
@@ -46,6 +47,7 @@ struct CSVLoadingSettings
 
 
 using Cell = std::string;
+using Row = std::vector<Cell>;
 
 class CSVContainer
 {
@@ -54,34 +56,52 @@ public:
 
 	CSVContainer(const CSVLoadingSettings& settings);
 
+	class RowView;
+
 	class cell_iterator
 	{
 	public:
-		cell_iterator(const CSVContainer* csv, size_t row_index, const RangeCollection& col_ranges);
+		cell_iterator(const RowView* row_view);
 		const Cell& operator*();
 		cell_iterator& operator++();
 	
 	private:
-		const CSVContainer* csv;
-		size_t row_index;
-		RangeCollection col_ranges;
+		const RowView* row_view;
 	};
 
 
-	class Row
+	class RowView
 	{
-		friend class CSVContainer;
-	
 	public:
-		Row(const CSVContainer* csv, size_t row_index, const RangeCollection& col_ranges);
+		RowView(const Row* row, const RangeCollection* col_ranges)
+			: row(row), col_ranges(col_ranges)
+		{}
 
-		cell_iterator begin();
-		cell_iterator end();
+		CSVContainer::cell_iterator begin();
+		CSVContainer::cell_iterator end();
 
 	private:
-		const CSVContainer* csv;
-		size_t row_index;
-		RangeCollection col_ranges;
+		const Row* row;
+		const RangeCollection* col_ranges;
+	};
+
+
+	class row_iterator
+	{
+	public:
+		using difference_type = std::ptrdiff_t;
+		using value_type = RowView;
+		using pointer = const value_type*;
+		using reference = const value_type&;
+		using iterator_category = std::forward_iterator_tag;
+
+		row_iterator(const CSVContainer* csv, const RangeCollection* row_ranges, size_t pos);
+		reference operator*();
+		row_iterator& operator++();
+
+	private:
+		pointer row;
+		const RangeCollection* row_ranges;
 	};
 
 	// proxy class that provides read-only access to subsample of our CSV by rows and columns.
@@ -101,10 +121,13 @@ public:
 		Frame(const CSVContainer* csv, const RangeCollection& ranges, bool axis = AXIS_ROWS);
 		Frame(const CSVContainer* csv, RangeCollection&& ranges, bool axis = AXIS_ROWS);
 		Frame(const CSVContainer* csv, const RangeCollection& row_ranges, const RangeCollection& col_ranges);
+		Frame(const CSVContainer* csv, RangeCollection&& row_ranges, RangeCollection&& col_ranges);
 
 		// for (const auto& row : frame)
 		//     for (const auto& cell : row)
 		//         ...
+		row_iterator begin();
+		row_iterator end();
 
 	private:
 		const CSVContainer* csv;
@@ -114,8 +137,10 @@ public:
 
 private:
 	CsvLoadingSettings m_settings;
-	std::vector<std::vector<Cell>> m_table;
+	std::vector<Row> m_table;
 	std::vector<std::string> m_columnNames;
 	size_t m_numRows;
 	size_t m_numCols;
 };
+
+#endif
