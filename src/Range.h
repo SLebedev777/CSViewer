@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __CSVIEWER_RANGE_H__
+#define __CSVIEWER_RANGE_H__
 
 #include <list>
 #include <stdexcept>
@@ -59,8 +60,8 @@ struct Range
 	const_iterator begin() const { return cbegin(); }  // to use range-based for loop
 	const_iterator end() const { return cend(); }
 
-	const size_t from;
-	const size_t to;
+	size_t from;
+	size_t to;
 };
 
 bool operator==(const Range& x, const Range& y);
@@ -77,6 +78,10 @@ public:
 	using const_iterator = container::const_iterator;
 
 	RangeCollection() = default;
+	RangeCollection(const RangeCollection& other) = default;
+	RangeCollection(RangeCollection&& other) = default;
+	RangeCollection& operator=(const RangeCollection& other) = default;
+	RangeCollection& operator=(RangeCollection&& other) = default;
 
 	bool insert(const Range& range);
 
@@ -121,3 +126,6 @@ private:
 	container m_ranges;
 	size_t m_totalElements = 0;
 };
+
+
+#endif
