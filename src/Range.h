@@ -86,6 +86,7 @@ public:
 	bool insert(const Range& range);
 
 	size_t size() const { return m_ranges.size(); }
+	bool empty() const { return m_ranges.empty(); }
 	size_t totalElements() const { return m_totalElements; }
 
 	const_iterator cbegin() const { return m_ranges.cbegin(); }

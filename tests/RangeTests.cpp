@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "Range.h"
 #include <algorithm>
+#include <numeric>
 
 
 TEST(RangeTests, RangeIsEmpty)
@@ -89,5 +90,36 @@ TEST(RangeCollectionTests, RangeCollectionChainIterator)
 		std::copy(rc.chainBegin(), rc.chainEnd(), std::back_inserter(result));
 		EXPECT_EQ(expected, result);
 	}
+}
 
+TEST(RangeCollectionTests, RangeCollectionEmpty)
+{
+	RangeCollection rc;
+	size_t i = 0;
+	for (auto it = rc.chainBegin(); it != rc.chainEnd(); ++it)
+	{
+		*it;
+		++i;
+	}
+	EXPECT_EQ(0, i);
+
+	auto rc2 = RangeCollection();
+	EXPECT_EQ(0, rc2.size());
+}
+
+TEST(RangeCollectionTests, RangeCollectionChainIterator2)
+{
+	{
+		RangeCollection rc;
+		const size_t N = 9;
+		rc.insert(Range(0, N));
+		std::vector<int> result;
+		for (auto it = rc.chainBegin(); it != rc.chainEnd(); ++it)
+		{
+			result.push_back(*it);
+		}
+		std::vector<int> expected(N);
+		std::iota(expected.begin(), expected.end(), 0);
+		EXPECT_EQ(expected, result);
+	}
 }
