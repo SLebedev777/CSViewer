@@ -1,5 +1,4 @@
 #include "CmdLineParser.h"
-#include "Settings.h"
 #include <sstream>
 #include <algorithm>
 

@@ -6,7 +6,7 @@
 #include <variant>
 #include <array>
 #include <utility>
-#include "Settings.h"
+
 
 // тип значения у опции
 enum class CmdLineOptionType
