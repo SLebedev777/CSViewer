@@ -6,9 +6,10 @@ list(APPEND SOURCES
 	"main.cpp"
 	"CmdLineParserTests.cpp"
 	"RangeTests.cpp"
+	"CSVContainerTests.cpp"
 )
 
-# VERY IMPORTANT!!! THIS IS NEEDED THAT GTEST WILL NOT OVERRIDE MAIN PROJECT'S COMPILING&LINKIG SETTINGS!
+# VERY IMPORTANT!!! THIS IS NEEDED THAT GTEST WILL NOT OVERRIDE MAIN PROJECT'S COMPILING&LINKING SETTINGS!
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
 # Add source to this project's executable.
