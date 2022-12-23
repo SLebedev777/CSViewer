@@ -77,6 +77,8 @@ public:
 	using container = std::list<Range>;
 	using const_iterator = container::const_iterator;
 
+	// TODO: ctor from Range
+	// TODO: ctor from initializer-list of {Range, Range, ...}
 	RangeCollection() = default;
 	RangeCollection(const RangeCollection& other) = default;
 	RangeCollection(RangeCollection&& other) = default;

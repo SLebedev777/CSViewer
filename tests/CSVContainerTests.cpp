@@ -42,3 +42,27 @@ TEST(CSVContainerTests, CSVContainerFrame1RowIterator1)
 		std::cout << row << std::endl;
 	}
 }
+
+TEST(CSVContainerTests, CSVContainerFrameSingleRowRange)
+{
+	auto csv = make_csv_container(10, 4);
+	CSVContainer::Frame frame(&csv, Range(3, 7));
+	for (const auto& row : frame)
+	{
+		std::cout << row << std::endl;
+	}
+}
+
+TEST(CSVContainerTests, CSVContainerFrameRangeCollectionByRows)
+{
+	auto csv = make_csv_container(15, 4);
+	RangeCollection rc;
+	rc.insert(Range(2, 5));
+	rc.insert(Range(7, 9));
+	rc.insert(Range(12, 13));
+	CSVContainer::Frame frame(&csv, rc);
+	for (const auto& row : frame)
+	{
+		std::cout << row << std::endl;
+	}
+}
