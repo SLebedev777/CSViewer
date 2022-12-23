@@ -28,13 +28,17 @@ TEST(CSVContainerTests, CSVContainerMakeContainer)
 	EXPECT_TRUE(true);
 }
 
-TEST(CSVContainerTests, CSVContainerFrame1)
+TEST(CSVContainerTests, CSVContainerFrame1RowIterator1)
 {
-	auto csv = make_csv_container(9, 4);
+	auto csv = make_csv_container(3, 4);
 	CSVContainer::Frame frame(&csv);
 	std::vector<size_t> v;
-	for (CSVContainer::row_iterator row = frame.begin(); row != frame.end(); ++row)
+	for (CSVContainer::row_iterator row_it = frame.begin(); row_it != frame.end(); ++row_it)
 	{
-		v.push_back(*(row.iter));
+		std::cout << *row_it << std::endl;
+	}
+	for (const auto& row : frame)
+	{
+		std::cout << row << std::endl;
 	}
 }

@@ -1,6 +1,7 @@
 #include "CSV.h"
 #include <cassert>
 #include <algorithm>
+#include <iostream>
 
 CSVContainer::CSVContainer(std::vector<Row>&& data, std::vector<std::string>&& column_names, const std::string& name)
 	: m_data(std::move(data))
@@ -99,3 +100,9 @@ CSVContainer::row_iterator CSVContainer::Frame::end()
 	return CSVContainer::row_iterator{ csv, row_ranges.chainEnd(), &col_ranges };
 }
 
+std::ostream& operator<<(std::ostream& os, const CSVContainer::RowView& row_view)
+{
+	Row row = *(row_view.row);
+	std::copy(row.begin(), row.end(), std::ostream_iterator<std::string>{os, ", "});
+	return os;
+}

@@ -83,6 +83,8 @@ public:
 		CSVContainer::cell_iterator begin();
 		CSVContainer::cell_iterator end();
 
+		friend std::ostream& operator<<(std::ostream& os, const RowView& row_view);
+
 	private:
 		const Row* row;
 		const RangeCollection* col_ranges;
@@ -100,12 +102,13 @@ public:
 		using iterator_category = std::forward_iterator_tag;
 
 		row_iterator(const CSVContainer* csv, typename RangeCollection::chain_iterator iter, const RangeCollection* col_ranges);
-		reference operator*() { return RowView(&(csv->m_data[*iter]), col_ranges); }
+		value_type operator*() { return RowView(&(csv->m_data[*iter]), col_ranges); }  // !!! ATTENTION! We return a COPY of RowView r-value object
 		row_iterator& operator++() { ++iter; return *this; }
+		bool operator==(const row_iterator& other) { return iter == other.iter; }
 		bool operator!=(const row_iterator& other) { return iter != other.iter; }
 
-		typename RangeCollection::chain_iterator iter;
 	private:
+		typename RangeCollection::chain_iterator iter;
 		const CSVContainer* csv;
 		const RangeCollection* col_ranges;
 	};
