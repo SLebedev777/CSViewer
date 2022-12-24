@@ -3,6 +3,8 @@
 
 #include <list>
 #include <stdexcept>
+#include <initializer_list>
+#include <iostream>
 
 
 // constant interval [from; to)
@@ -32,6 +34,8 @@ struct Range
 		}
 		return false;
 	}
+
+	std::string to_string() const;
 
 	// having range [from;to) iterate over sequence: from, from+1, from+2, ..., to-1
 	class const_iterator
@@ -68,6 +72,7 @@ bool operator==(const Range& x, const Range& y);
 bool operator!=(const Range& x, const Range& y);
 bool operator<(const Range& x, const Range& y);
 
+std::ostream& operator<<(std::ostream& os, const Range& range);
 
 // ordered collection of ranges, arranged in sorted non-descending order
 class RangeCollection
@@ -77,13 +82,13 @@ public:
 	using container = std::list<Range>;
 	using const_iterator = container::const_iterator;
 
-	// TODO: ctor from Range
-	// TODO: ctor from initializer-list of {Range, Range, ...}
 	RangeCollection() = default;
 	RangeCollection(const RangeCollection& other) = default;
 	RangeCollection(RangeCollection&& other) = default;
 	RangeCollection& operator=(const RangeCollection& other) = default;
 	RangeCollection& operator=(RangeCollection&& other) = default;
+	RangeCollection(const Range& range);
+	RangeCollection(std::initializer_list<Range> range_list);
 
 	bool insert(const Range& range);
 

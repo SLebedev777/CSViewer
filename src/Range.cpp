@@ -1,5 +1,5 @@
 #include "Range.h"
-
+#include <sstream>
 
 bool operator==(const Range& x, const Range& y)
 {
@@ -14,6 +14,33 @@ bool operator!=(const Range& x, const Range& y)
 bool operator<(const Range& x, const Range& y)
 {
 	return x.to <= y.from;
+}
+
+std::ostream& operator<<(std::ostream& os, const Range& range)
+{
+	os << "[" << range.from << ", " << range.to << ")";
+	return os;
+}
+
+std::string Range::to_string() const
+{
+	std::ostringstream oss;
+	oss << *this;
+	return oss.str();
+}
+
+RangeCollection::RangeCollection(const Range& range)
+{
+	insert(range);
+}
+
+RangeCollection::RangeCollection(std::initializer_list<Range> range_list)
+{
+	for (auto range : range_list)
+	{
+		if (!insert(range))
+			throw std::logic_error("Failed to construct RangeCollection! This Range in initializer list intersects with others: " + range.to_string());
+	}
 }
 
 bool RangeCollection::insert(const Range& range)

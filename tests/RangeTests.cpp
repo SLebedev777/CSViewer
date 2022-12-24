@@ -123,3 +123,28 @@ TEST(RangeCollectionTests, RangeCollectionChainIterator2)
 		EXPECT_EQ(expected, result);
 	}
 }
+
+TEST(RangeCollectionTests, RangeCollectionCtorFromRange)
+{
+	Range range(4, 8);
+	RangeCollection rc(range);
+	EXPECT_EQ(1, rc.size());
+	EXPECT_EQ(*rc.cbegin(), range);
+}
+
+TEST(RangeCollectionTests, RangeCollectionCtorFromInitializerList)
+{
+	Range r1(4, 8), r2(15, 17), r3(20, 23);
+	RangeCollection rc({r1, r2, r3});
+	EXPECT_EQ(3, rc.size());
+	std::vector<size_t> result;
+	std::copy(rc.chainBegin(), rc.chainEnd(), std::back_inserter(result));
+	std::vector<size_t> expected{ 4, 5, 6, 7, 15, 16, 20, 21, 22 };
+	EXPECT_EQ(expected, result);
+}
+
+TEST(RangeCollectionTests, RangeCollectionCtorFromBadInitializerList)
+{
+	Range r1(4, 8), r2(15, 17), r3(5, 20);  // 3rd range intersects others, can't create RangeCollection from these ranges
+	EXPECT_THROW(RangeCollection({ r1, r2, r3 }), std::logic_error);
+}
