@@ -16,6 +16,16 @@ bool operator<(const Range& x, const Range& y)
 	return x.to <= y.from;
 }
 
+bool operator>(const Range& x, const Range& y)
+{
+	return y < x;
+}
+
+bool Range::contains(const Range& other) const
+{
+	return (from <= other.from) && (to >= other.to);
+}
+
 std::ostream& operator<<(std::ostream& os, const Range& range)
 {
 	os << "[" << range.from << ", " << range.to << ")";
@@ -102,4 +112,49 @@ RangeCollection::chain_iterator& RangeCollection::chain_iterator::operator++()
 	}
 
 	return *this;
+}
+
+RangeCollection RangeCollection::boundBy(const Range& limits)
+{
+	RangeCollection result;
+	for (auto range_it = cbegin(); range_it != cend(); ++range_it)
+	{
+		const Range& r = *range_it;
+		if (r < limits)
+			continue;
+		else if (r > limits)
+			break;
+		else if (limits.contains(r))
+			result.insert(r);
+		else if (r.contains(limits))
+			result.insert(limits);
+		else
+		{
+			// r and limits overlap
+			size_t new_from = std::max(r.from, limits.from);
+			size_t new_to = std::min(r.to, limits.to);
+			result.insert(Range(new_from, new_to));
+		}
+	}
+	return result;
+}
+
+bool operator==(const RangeCollection& left, const RangeCollection& right)
+{
+	if (left.size() != right.size())
+		return false;
+
+	auto left_it = left.cbegin();
+	auto right_it = right.cbegin();
+	for (; left_it != left.cend(), right_it != right.cend(); ++left_it, ++right_it)
+	{
+		if (*left_it != *right_it)
+			return false;
+	}
+	return true;
+}
+
+bool operator!=(const RangeCollection& left, const RangeCollection& right)
+{
+	return !(left == right);
 }

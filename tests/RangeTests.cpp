@@ -148,3 +148,118 @@ TEST(RangeCollectionTests, RangeCollectionCtorFromBadInitializerList)
 	Range r1(4, 8), r2(15, 17), r3(5, 20);  // 3rd range intersects others, can't create RangeCollection from these ranges
 	EXPECT_THROW(RangeCollection({ r1, r2, r3 }), std::logic_error);
 }
+
+TEST(RangeCollectionTests, RangeCollectionEqualityOperator)
+{
+	{
+		RangeCollection rc1;
+		RangeCollection rc2(rc1);
+		EXPECT_TRUE(rc1 == rc2);
+	}
+	{
+		RangeCollection rc1({ Range(4, 8), Range(15, 17), Range(20, 25) });
+		RangeCollection rc2(rc1);
+		EXPECT_TRUE(rc1 == rc2);
+	}
+	{
+		RangeCollection rc1;
+		RangeCollection rc2(Range(5, 10));
+		EXPECT_TRUE(rc1 != rc2);
+	}
+	{
+		RangeCollection rc1({ Range(4, 8), Range(15, 17), Range(20, 25) });
+		RangeCollection rc2({ Range(4, 8), Range(13, 17), Range(20, 25) });
+		EXPECT_TRUE(rc1 != rc2);
+	}
+
+}
+
+TEST(RangeCollectionTests, RangeCollectionBoundBy)
+{
+	// limits contain all RangeCollection of single Range
+	{
+		RangeCollection rc({ Range(5, 10) });
+		Range limits(2, 15);
+		RangeCollection result = rc.boundBy(limits);
+		RangeCollection expected = rc;
+		EXPECT_EQ(expected, result);
+	}
+	// limits contain all RangeCollection of many Ranges
+	{
+		RangeCollection rc({ Range(5, 10), Range(12, 14), Range(20, 22) });
+		Range limits(5, 22);
+		RangeCollection result = rc.boundBy(limits);
+		RangeCollection expected = rc;
+		EXPECT_EQ(expected, result);
+	}
+	// all(limits < r for r in RangeCollection) == true
+	{
+		RangeCollection rc({ Range(5, 10), Range(12, 14), Range(20, 22) });
+		Range limits(0, 5);
+		RangeCollection result = rc.boundBy(limits);
+		RangeCollection expected; // empty
+		EXPECT_EQ(expected, result);
+	}
+	// all(limits > r for r in RangeCollection) == true
+	{
+		RangeCollection rc({ Range(5, 10), Range(12, 14), Range(20, 22) });
+		Range limits(22, 25);
+		RangeCollection result = rc.boundBy(limits);
+		RangeCollection expected; // empty
+		EXPECT_EQ(expected, result);
+	}
+	// Range contains limits
+	{
+		RangeCollection rc({ Range(0, 4), Range(5, 10), Range(12, 14), Range(20, 22) });
+		Range limits(7, 9);
+		RangeCollection result = rc.boundBy(limits);
+		RangeCollection expected(limits);
+		EXPECT_EQ(expected, result);
+	}
+	// limits fully cuts some 1 range
+	{
+		Range r1(0, 4), r2(5, 10), r3(20, 22);
+		RangeCollection rc({ r1, r2, r3 });
+		Range limits(0, r3.from);
+		RangeCollection result = rc.boundBy(limits);
+		RangeCollection expected({r1, r2});
+		EXPECT_EQ(expected, result);
+	}
+	// limits partially cuts some 1 range
+	{
+		Range r1(0, 4), r2(5, 10), r3(20, 22);
+		RangeCollection rc({ r1, r2, r3 });
+		Range limits(0, r3.from + 1);
+		RangeCollection result = rc.boundBy(limits);
+		RangeCollection expected({ r1, r2, Range(r3.from, r3.from + 1) });
+		EXPECT_EQ(expected, result);
+	}
+	// limits partially cuts some 1 range from left
+	{
+		Range r1(0, 10), r2(20, 30);
+		RangeCollection rc({ r1, r2 });
+		Range limits(0, 25);
+		RangeCollection result = rc.boundBy(limits);
+		RangeCollection expected({ r1, Range(20, 25) });
+		EXPECT_EQ(expected, result);
+	}
+	// limits partially cuts some 1 range from right
+	{
+		Range r1(0, 10), r2(20, 30);
+		RangeCollection rc({ r1, r2 });
+		Range limits(5, 50);
+		RangeCollection result = rc.boundBy(limits);
+		RangeCollection expected({ Range(5, 10), Range(20, 30) });
+		EXPECT_EQ(expected, result);
+	}
+	// limits partially cuts 2 ranges
+	{
+		Range r1(0, 10), r2(20, 30), r3(40, 50);
+		RangeCollection rc({ r1, r2, r3 });
+		Range limits(5, 45);
+		RangeCollection result = rc.boundBy(limits);
+		RangeCollection expected({ Range(5, 10), r2, Range(40, 45) });
+		EXPECT_EQ(expected, result);
+	}
+
+}

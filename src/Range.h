@@ -23,6 +23,7 @@ struct Range
 	size_t lastIncluded() const { return (to > 0) ? (to - 1) : 0; }
 	
 	bool contains(size_t value) const { return (value >= from) && (value < to); }
+	bool contains(const Range& other) const;
 	bool intersects(const Range& other) const
 	{
 		if (contains(other.from) ||
@@ -71,8 +72,10 @@ struct Range
 bool operator==(const Range& x, const Range& y);
 bool operator!=(const Range& x, const Range& y);
 bool operator<(const Range& x, const Range& y);
+bool operator>(const Range& x, const Range& y);
 
 std::ostream& operator<<(std::ostream& os, const Range& range);
+
 
 // ordered collection of ranges, arranged in sorted non-descending order
 class RangeCollection
@@ -91,6 +94,7 @@ public:
 	RangeCollection(std::initializer_list<Range> range_list);
 
 	bool insert(const Range& range);
+	RangeCollection boundBy(const Range& limits);
 
 	size_t size() const { return m_ranges.size(); }
 	bool empty() const { return m_ranges.empty(); }
@@ -134,6 +138,9 @@ private:
 	container m_ranges;
 	size_t m_totalElements = 0;
 };
+
+bool operator==(const RangeCollection& left, const RangeCollection& right);
+bool operator!=(const RangeCollection& left, const RangeCollection& right);
 
 
 #endif
