@@ -114,7 +114,7 @@ RangeCollection::chain_iterator& RangeCollection::chain_iterator::operator++()
 	return *this;
 }
 
-RangeCollection RangeCollection::boundBy(const Range& limits)
+RangeCollection RangeCollection::boundBy(const Range& limits) const
 {
 	RangeCollection result;
 	for (auto range_it = cbegin(); range_it != cend(); ++range_it)

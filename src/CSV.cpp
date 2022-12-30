@@ -30,10 +30,12 @@ CSVContainer::Frame::Frame(const CSVContainer* csv, const Range& range, bool axi
 	if (axis == AXIS_ROWS)
 	{
 		row_ranges.insert(range);
+		row_ranges = row_ranges.boundBy(Range(0, csv->m_numRows));
 	}
 	else
 	{
 		col_ranges.insert(range);
+		col_ranges = col_ranges.boundBy(Range(0, csv->m_numCols));
 	}
 }
 
@@ -49,11 +51,11 @@ CSVContainer::Frame::Frame(const CSVContainer* csv, const RangeCollection& range
 {
 	if (axis == AXIS_ROWS)
 	{
-		row_ranges = ranges;
+		row_ranges = ranges.boundBy(Range(0, csv->m_numRows));
 	}
 	else
 	{
-		col_ranges = ranges;
+		col_ranges = ranges.boundBy(Range(0, csv->m_numCols));
 	}
 }
 
@@ -62,24 +64,24 @@ CSVContainer::Frame::Frame(const CSVContainer* csv, RangeCollection&& ranges, bo
 {
 	if (axis == AXIS_ROWS)
 	{
-		row_ranges = std::move(ranges);
+		row_ranges = std::move(ranges.boundBy(Range(0, csv->m_numRows)));
 	}
 	else
 	{
-		col_ranges = std::move(ranges);
+		col_ranges = std::move(ranges.boundBy(Range(0, csv->m_numCols)));
 	}
 }
 
 CSVContainer::Frame::Frame(const CSVContainer* csv, const RangeCollection& row_ranges, const RangeCollection& col_ranges)
 	: csv(csv)
-	, row_ranges(row_ranges)
-	, col_ranges(col_ranges)
+	, row_ranges(row_ranges.boundBy(Range(0, csv->m_numRows)))
+	, col_ranges(col_ranges.boundBy(Range(0, csv->m_numCols)))
 {}
 
 CSVContainer::Frame::Frame(const CSVContainer* csv, RangeCollection&& row_ranges, RangeCollection&& col_ranges)
 	: csv(csv)
-	, row_ranges(std::move(row_ranges))
-	, col_ranges(std::move(col_ranges))
+	, row_ranges(std::move(row_ranges.boundBy(Range(0, csv->m_numRows))))
+	, col_ranges(std::move(col_ranges.boundBy(Range(0, csv->m_numCols))))
 {}
 
 
@@ -88,6 +90,11 @@ CSVContainer::row_iterator::row_iterator(const CSVContainer* csv, typename Range
 	, iter(iter)
 	, col_ranges(col_ranges)
 {
+}
+
+CSVContainer::RowView CSVContainer::row_iterator::operator*()
+{
+	return RowView(&(csv->m_data[*iter]), col_ranges); 
 }
 
 CSVContainer::row_iterator CSVContainer::Frame::begin()

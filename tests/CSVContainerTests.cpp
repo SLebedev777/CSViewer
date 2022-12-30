@@ -20,6 +20,14 @@ namespace
 		std::generate(column_names.begin(), column_names.end(), [j = 0]() mutable { return "C" + std::to_string(j++); });
 		return CSVContainer(std::move(data), std::move(column_names), "test_" + std::to_string(n_rows) + "_" + std::to_string(n_cols));
 	}
+
+	std::vector<std::string> range_collection_to_str_vector(const RangeCollection& rc, const std::string& postfix = "")
+	{
+		std::vector<std::string> result;
+		std::transform(rc.chainBegin(), rc.chainEnd(), std::back_inserter(result),
+			[&postfix](const auto& element) { return std::to_string(element) + postfix; });
+		return result;
+	}
 }
 
 TEST(CSVContainerTests, CSVContainerMakeContainer)
@@ -65,4 +73,25 @@ TEST(CSVContainerTests, CSVContainerFrameRangeCollectionByRows)
 	{
 		std::cout << row << std::endl;
 	}
+}
+
+TEST(CSVContainerTests, CSVContainerFrameRangeCollectionByRowsNeedsBound)
+{
+	const size_t NUM_ROWS = 15;
+	const size_t NUM_COLS = 4;
+	auto csv = make_csv_container(NUM_ROWS, NUM_COLS);
+
+	RangeCollection rc;
+	rc.insert(Range(2, 5));
+	rc.insert(Range(7, 9));
+	rc.insert(Range(12, 20));  // this range exceeds frame shape by rows, so we need to bound it
+	RangeCollection rc_bound = rc.boundBy(Range(0, NUM_ROWS));
+	
+	CSVContainer::Frame frame(&csv, rc);  // feed unbound rc to frame - should be bound by frame ctor
+	size_t i = 0;
+	for (auto row_it = frame.begin(); row_it != frame.end(); ++row_it, ++i)
+	{
+		EXPECT_NO_THROW(*row_it); // test dereference doesn't throw because of "out of range" exception
+	}
+	EXPECT_EQ(rc_bound.totalElements(), i);
 }

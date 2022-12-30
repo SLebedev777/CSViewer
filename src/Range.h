@@ -94,7 +94,7 @@ public:
 	RangeCollection(std::initializer_list<Range> range_list);
 
 	bool insert(const Range& range);
-	RangeCollection boundBy(const Range& limits);
+	RangeCollection boundBy(const Range& limits) const;
 
 	size_t size() const { return m_ranges.size(); }
 	bool empty() const { return m_ranges.empty(); }
@@ -128,8 +128,8 @@ public:
 		Range::const_iterator range_it;  // iterates within current range
 	};
 
-	chain_iterator chainBegin() { return chain_iterator(cbegin(), cend()); }
-	chain_iterator chainEnd() { return chain_iterator(cend(), cend()); }
+	chain_iterator chainBegin() const { return chain_iterator(cbegin(), cend()); }
+	chain_iterator chainEnd() const { return chain_iterator(cend(), cend()); }
 
 private:
 	bool try_push_back(const Range& range);
