@@ -3,6 +3,27 @@
 #include <algorithm>
 #include <iostream>
 
+
+CSVContainer::cell_iterator::cell_iterator(const CSVContainer::RowView* row_view, typename RangeCollection::chain_iterator iter)
+	: row_view(row_view)
+	, iter(iter)
+{}
+
+const Cell& CSVContainer::cell_iterator::operator*()
+{
+	const Row& row = *(row_view->row);
+	return row[*iter];
+}
+
+CSVContainer::RowView::RowView(const Row* row)
+	: row(row), col_ranges(Range(0, row->size()))
+{}
+
+CSVContainer::RowView::RowView(const Row* row, const RangeCollection& col_ranges)
+	: row(row), col_ranges(col_ranges.boundBy(Range(0, row->size())))
+{}
+
+
 CSVContainer::CSVContainer(std::vector<Row>&& data, std::vector<std::string>&& column_names, const std::string& name)
 	: m_data(std::move(data))
 	, m_columnNames(std::move(column_names))
@@ -94,7 +115,7 @@ CSVContainer::row_iterator::row_iterator(const CSVContainer* csv, typename Range
 
 CSVContainer::RowView CSVContainer::row_iterator::operator*()
 {
-	return RowView(&(csv->m_data[*iter]), col_ranges); 
+	return RowView(&(csv->m_data[*iter]), *col_ranges); 
 }
 
 CSVContainer::row_iterator CSVContainer::Frame::begin()
@@ -107,9 +128,16 @@ CSVContainer::row_iterator CSVContainer::Frame::end()
 	return CSVContainer::row_iterator{ csv, row_ranges.chainEnd(), &col_ranges };
 }
 
+/*
 std::ostream& operator<<(std::ostream& os, const CSVContainer::RowView& row_view)
 {
 	Row row = *(row_view.row);
 	std::copy(row.begin(), row.end(), std::ostream_iterator<std::string>{os, ", "});
+	return os;
+}
+*/
+std::ostream& operator<<(std::ostream& os, const CSVContainer::RowView& row_view)
+{
+	std::copy(row_view.cbegin(), row_view.cend(), std::ostream_iterator<std::string>{os, ", "});
 	return os;
 }

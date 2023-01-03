@@ -63,33 +63,45 @@ public:
 	class cell_iterator
 	{
 	public:
-		cell_iterator(const RowView* row_view);
-		const Cell& operator*();
-		cell_iterator& operator++();
-		bool operator==(const cell_iterator& other);
-		bool operator!=(const cell_iterator& other);
+		using difference_type = std::ptrdiff_t;
+		using value_type = Cell;
+		using pointer = const value_type*;
+		using reference = const value_type&;
+		using iterator_category = std::forward_iterator_tag;
+
+		cell_iterator(const RowView* row_view, typename RangeCollection::chain_iterator iter);
+		reference operator*();
+		cell_iterator& operator++() { ++iter; return *this; };
+		bool operator==(const cell_iterator& other) { return (row_view == other.row_view) && (iter == other.iter); }
+		bool operator!=(const cell_iterator& other) { return !(*this == other); };
 	
 	private:
 		const RowView* row_view;
+		typename RangeCollection::chain_iterator iter;
 	};
 
 
 	// helper class of row read-only view 
 	class RowView
 	{
-	public:
-		RowView(const Row* row, const RangeCollection* col_ranges)
-			: row(row), col_ranges(col_ranges)
-		{}
+		friend class cell_iterator;
 
-		CSVContainer::cell_iterator begin();
-		CSVContainer::cell_iterator end();
+	public:
+		RowView(const Row* row);
+		RowView(const Row* row, const RangeCollection& col_ranges);
+
+		CSVContainer::cell_iterator cbegin() const { return cell_iterator(this, col_ranges.chainBegin()); }
+		CSVContainer::cell_iterator cend() const { return cell_iterator(this, col_ranges.chainEnd()); }
+
+		CSVContainer::cell_iterator begin() { return cell_iterator(this, col_ranges.chainBegin()); }
+		CSVContainer::cell_iterator end() { return cell_iterator(this, col_ranges.chainEnd()); }
+
 
 		friend std::ostream& operator<<(std::ostream& os, const RowView& row_view);
 
 	private:
 		const Row* row;
-		const RangeCollection* col_ranges;
+		RangeCollection col_ranges;
 	};
 
 
@@ -106,8 +118,8 @@ public:
 		row_iterator(const CSVContainer* csv, typename RangeCollection::chain_iterator iter, const RangeCollection* col_ranges);
 		value_type operator*();  // !!! ATTENTION! We return a COPY of RowView r-value object
 		row_iterator& operator++() { ++iter; return *this; }
-		bool operator==(const row_iterator& other) { return iter == other.iter; }
-		bool operator!=(const row_iterator& other) { return iter != other.iter; }
+		bool operator==(const row_iterator& other) { return (csv == other.csv) && (iter == other.iter); }
+		bool operator!=(const row_iterator& other) { return !(*this == other); }
 
 	private:
 		typename RangeCollection::chain_iterator iter;
@@ -134,7 +146,7 @@ public:
 		Frame(const CSVContainer* csv, const RangeCollection& row_ranges, const RangeCollection& col_ranges);
 		Frame(const CSVContainer* csv, RangeCollection&& row_ranges, RangeCollection&& col_ranges);
 
-		// for (const auto& row : frame)
+		// for (auto& row : frame)
 		//     for (const auto& cell : row)
 		//         ...
 		row_iterator begin();

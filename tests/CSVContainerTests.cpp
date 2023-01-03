@@ -1,18 +1,18 @@
 #include "gtest/gtest.h"
 #include "CSV.h"
 #include <algorithm>
-
+#include <sstream>
 
 namespace
 {
-	CSVContainer make_csv_container(size_t n_rows, size_t n_cols)
+	CSVContainer make_csv_container(size_t n_rows, size_t n_cols, const std::string& sep = "_")
 	{
 		std::vector<Row> data;
 		for (size_t i = 0; i < n_rows; ++i)
 		{
 			auto si = std::to_string(i);
 			Row row(n_cols);
-			std::generate(row.begin(), row.end(), [&si, j = 0]() mutable { return si + "_" + std::to_string(j++); });
+			std::generate(row.begin(), row.end(), [&, j = 0]() mutable { return si + sep + std::to_string(j++); });
 			data.push_back(std::move(row));
 		}
 
@@ -21,11 +21,11 @@ namespace
 		return CSVContainer(std::move(data), std::move(column_names), "test_" + std::to_string(n_rows) + "_" + std::to_string(n_cols));
 	}
 
-	std::vector<std::string> range_collection_to_str_vector(const RangeCollection& rc, const std::string& postfix = "")
+	std::vector<std::string> range_collection_to_str_vector(const RangeCollection& rc, const std::string& prefix = "", const std::string& postfix = "")
 	{
 		std::vector<std::string> result;
 		std::transform(rc.chainBegin(), rc.chainEnd(), std::back_inserter(result),
-			[&postfix](const auto& element) { return std::to_string(element) + postfix; });
+			[&](const auto& element) { return prefix + std::to_string(element) + postfix; });
 		return result;
 	}
 }
@@ -94,4 +94,80 @@ TEST(CSVContainerTests, CSVContainerFrameRangeCollectionByRowsNeedsBound)
 		EXPECT_NO_THROW(*row_it); // test dereference doesn't throw because of "out of range" exception
 	}
 	EXPECT_EQ(rc_bound.totalElements(), i);
+}
+
+TEST(CSVContainerTests, CSVContainerCellIterator1)
+{
+	Row row{ "0_0", "0_1", "0_2", "0_3", "0_4", "0_5"};
+	RangeCollection col_ranges;
+	CSVContainer::RowView view{ &row };
+	for (CSVContainer::cell_iterator cit = view.begin(); cit != view.end(); ++cit)
+		std::cout << *cit << " ";
+}
+
+TEST(CSVContainerTests, CSVContainerCellIterator2)
+{
+	Row row{ "0_0", "0_1", "0_2", "0_3", "0_4", "0_5"};
+	RangeCollection col_ranges{ Range(1, 3)};
+	std::stringstream ss;
+	ss << CSVContainer::RowView{ &row, col_ranges };
+	EXPECT_EQ(ss.str(), row[1] + ", " + row[2] + ", ");
+}
+
+TEST(CSVContainerTests, CSVContainerCellIterator3)
+{
+	Row row{ "0_0", "0_1", "0_2", "0_3", "0_4", "0_5" };
+	RangeCollection col_ranges{ Range(3, 10) };
+	CSVContainer::RowView view{ &row, col_ranges };
+	std::vector<std::string> result;
+	std::vector<std::string> expected = range_collection_to_str_vector(col_ranges.boundBy(Range(0, 6)), "0_");
+	std::copy(view.begin(), view.end(), std::back_inserter(result));
+	EXPECT_EQ(expected, result);
+}
+
+TEST(CSVContainerTests, CSVContainerCellIterator4)
+{
+	const size_t NUM_COLS = 15;
+	Row row = range_collection_to_str_vector(Range(0, NUM_COLS), "0_");
+	RangeCollection col_ranges{ Range(3, 6), Range(9, 11), Range(13, 20) };
+	CSVContainer::RowView view{ &row, col_ranges };
+	std::vector<std::string> result;
+	std::vector<std::string> expected = range_collection_to_str_vector(col_ranges.boundBy(Range(0, NUM_COLS)), "0_");
+	std::copy(view.begin(), view.end(), std::back_inserter(result));
+	EXPECT_EQ(expected, result);
+}
+
+TEST(CSVContainerTests, CSVContainerRowIteratorCellIterator1)
+{
+	const size_t NUM_ROWS = 15;
+	const size_t NUM_COLS = 15;
+	std::string sep = "|";
+	auto csv = make_csv_container(NUM_ROWS, NUM_COLS, sep);
+
+	RangeCollection row_ranges{ Range(3, 6), Range(9, 12), Range(13, 20) };
+	RangeCollection row_ranges_bound = row_ranges.boundBy(Range(0, NUM_ROWS));
+	RangeCollection col_ranges{ Range(5, 8), Range(11, 17) };
+	RangeCollection col_ranges_bound = col_ranges.boundBy(Range(0, NUM_COLS));
+	CSVContainer::Frame frame(&csv, row_ranges, col_ranges);
+	
+	std::vector<Row> expected;
+	for (auto rit = row_ranges_bound.chainBegin(); rit != row_ranges_bound.chainEnd(); ++rit)
+	{
+		std::string row_prefix(std::to_string(*rit) + sep);
+		Row row = range_collection_to_str_vector(col_ranges_bound, row_prefix);
+		expected.push_back(std::move(row));
+	}
+
+	std::vector<Row> result;
+
+	for (auto& row : frame)
+	{
+		Row result_row;
+		for (auto& cell : row)
+			result_row.push_back(cell);
+
+		result.push_back(result_row);
+	}
+
+	EXPECT_EQ(expected, result);
 }
