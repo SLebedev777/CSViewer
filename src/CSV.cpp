@@ -128,14 +128,7 @@ CSVContainer::row_iterator CSVContainer::Frame::end()
 	return CSVContainer::row_iterator{ csv, row_ranges.chainEnd(), &col_ranges };
 }
 
-/*
-std::ostream& operator<<(std::ostream& os, const CSVContainer::RowView& row_view)
-{
-	Row row = *(row_view.row);
-	std::copy(row.begin(), row.end(), std::ostream_iterator<std::string>{os, ", "});
-	return os;
-}
-*/
+
 std::ostream& operator<<(std::ostream& os, const CSVContainer::RowView& row_view)
 {
 	std::copy(row_view.cbegin(), row_view.cend(), std::ostream_iterator<std::string>{os, ", "});
