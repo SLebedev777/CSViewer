@@ -78,10 +78,10 @@ extern const CmdLineOptionDescriptionContainer g_ValidOptions;
 
 
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const std::vector<T> v)
+std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 {
 	os << "[";
-	for (const auto x : v)
+	for (const auto& x : v)
 		os << x << ", ";
 	os << "]";
 	return os;
