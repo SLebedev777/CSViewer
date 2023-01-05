@@ -5,7 +5,6 @@
 #include <string>
 #include <stdexcept>
 #include <limits>
-#include "CmdLineParser.h"
 #include "Range.h"
 
 
@@ -160,6 +159,9 @@ public:
 		RangeCollection row_ranges;
 		RangeCollection col_ranges;
 	};
+
+private:
+	void ReadCSV(const CSVLoadingSettings& settings);
 
 private:
 	CSVLoadingSettings m_settings;

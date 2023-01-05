@@ -23,6 +23,11 @@ CSVContainer::RowView::RowView(const Row* row, const RangeCollection& col_ranges
 	: row(row), col_ranges(col_ranges.boundBy(Range(0, row->size())))
 {}
 
+CSVContainer::CSVContainer(const CSVLoadingSettings& settings)
+	: m_settings(settings)
+{
+	ReadCSV(settings);
+}
 
 CSVContainer::CSVContainer(std::vector<Row>&& data, std::vector<std::string>&& column_names, const std::string& name)
 	: m_data(std::move(data))
@@ -41,8 +46,10 @@ CSVContainer::CSVContainer(std::vector<Row>&& data, std::vector<std::string>&& c
 CSVContainer::Frame::Frame(const CSVContainer* csv, size_t row_from, size_t row_to, size_t col_from, size_t col_to)
 	: csv(csv)
 {
-	row_ranges.insert(Range(row_from, (row_to != END) ? row_to : csv->m_numRows ));
+	row_ranges.insert(Range(row_from, (row_to != END) ? row_to : csv->m_numRows));
+	row_ranges = row_ranges.boundBy(Range(0, csv->m_numRows));
 	col_ranges.insert(Range(col_from, (col_to != END) ? col_to : csv->m_numCols));
+	col_ranges = col_ranges.boundBy(Range(0, csv->m_numCols));
 }
 
 CSVContainer::Frame::Frame(const CSVContainer* csv, const Range& range, bool axis)
@@ -64,7 +71,9 @@ CSVContainer::Frame::Frame(const CSVContainer* csv, const Range& rows, const Ran
 	: csv(csv)
 {
 	row_ranges.insert(rows);
+	row_ranges = row_ranges.boundBy(Range(0, csv->m_numRows));
 	col_ranges.insert(cols);
+	col_ranges = col_ranges.boundBy(Range(0, csv->m_numCols));
 }
 
 CSVContainer::Frame::Frame(const CSVContainer* csv, const RangeCollection& ranges, bool axis)
@@ -133,4 +142,9 @@ std::ostream& operator<<(std::ostream& os, const CSVContainer::RowView& row_view
 {
 	std::copy(row_view.cbegin(), row_view.cend(), std::ostream_iterator<std::string>{os, ", "});
 	return os;
+}
+
+void CSVContainer::ReadCSV(const CSVLoadingSettings& settings)
+{
+	throw std::runtime_error("Not implemented!");
 }
