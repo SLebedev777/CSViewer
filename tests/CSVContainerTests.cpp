@@ -28,6 +28,16 @@ namespace
 			[&](const auto& element) { return prefix + std::to_string(element) + postfix; });
 		return result;
 	}
+
+	void print_frame(CSVContainer::Frame& frame)
+	{
+		std::cout << frame.getColumnNames() << std::endl;
+		std::cout << "--------------------" << std::endl;
+		for (const auto& row : frame)
+		{
+			std::cout << row << std::endl;
+		}
+	}
 }
 
 TEST(CSVContainerTests, CSVContainerMakeContainer)
@@ -170,4 +180,24 @@ TEST(CSVContainerTests, CSVContainerRowIteratorCellIterator1)
 	}
 
 	EXPECT_EQ(expected, result);
+}
+
+TEST(CSVContainerTests, CSVContainerLoadCSVNoHeader)
+{
+	CSVLoadingSettings settings{ "data/test_utf8_comma_noquote_noheader_nobadlines.csv" };
+	CSVContainer csv{ settings };
+
+	CSVContainer::Frame frame(&csv);
+	print_frame(frame);
+}
+
+TEST(CSVContainerTests, CSVContainerLoadCSVHasHeader)
+{
+	CSVLoadingSettings settings{ "data/test_utf8_comma_noquote_hasheader_nobadlines.csv"};
+	settings.has_header = true;
+
+	CSVContainer csv{ settings };
+
+	CSVContainer::Frame frame(&csv);
+	print_frame(frame);
 }
