@@ -22,7 +22,7 @@ struct CSVLoadingSettings
 		const std::string& encoding = "utf8",
 		char delimiter = ',',
 		char quote = '"',
-		bool read_header = false,
+		bool has_header = false,
 		BadLinesPolicy bad_lines_policy = BadLinesPolicy::BL_RAISE,
 		size_t skip_first_lines = 0
 	)
@@ -30,7 +30,7 @@ struct CSVLoadingSettings
 		, encoding(encoding)
 		, delimiter(delimiter)
 		, quote(quote)
-		, read_header(read_header)
+		, has_header(has_header)
 		, bad_lines_policy(bad_lines_policy)
 		, skip_first_lines(skip_first_lines)
 	{}
@@ -39,7 +39,7 @@ struct CSVLoadingSettings
 	std::string encoding;
 	char delimiter;
 	char quote;
-	bool read_header;
+	bool has_header;
 	BadLinesPolicy bad_lines_policy;
 	size_t skip_first_lines;
 };
@@ -153,6 +153,7 @@ public:
 
 		const RangeCollection& getRowRanges() const { return row_ranges; }
 		const RangeCollection& getColRanges() const { return col_ranges; }
+		RowView getColumnNames() const { return RowView(&csv->m_columnNames, col_ranges); }
 
 	private:
 		const CSVContainer* csv;
@@ -167,8 +168,8 @@ private:
 	CSVLoadingSettings m_settings;
 	std::vector<Row> m_data;
 	std::vector<std::string> m_columnNames;
-	size_t m_numRows;
-	size_t m_numCols;
+	size_t m_numRows = 0;
+	size_t m_numCols = 0;
 };
 
 #endif

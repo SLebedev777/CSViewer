@@ -2,6 +2,39 @@
 #include <cassert>
 #include <algorithm>
 #include <iostream>
+#include <fstream>
+
+
+namespace
+{
+	template <typename Iter, typename OutIter, typename T, typename SliceFunc>
+	void split(Iter first, Iter last, OutIter out, const T& sep, SliceFunc slice_func,
+		bool remove_consecutive = false)
+	{
+		while (first != last)
+		{
+			auto slice_end(std::find(first, last, sep));
+			if ((first == slice_end) && remove_consecutive)
+			{
+				++first;
+				continue;
+			}
+			*out = slice_func(first, slice_end);
+			if (slice_end == last)
+				return;
+			++out;
+			first = ++slice_end;
+		}
+	}
+
+	// overloading for char separator (for splitting strings)
+	template <typename Iter, typename OutIter, typename SliceFunc>
+	void split(Iter first, Iter last, OutIter out, const char& sep, SliceFunc slice_func)
+	{
+		bool remove_consecutive = sep == ' ';
+		split(first, last, out, sep, slice_func, remove_consecutive);
+	}
+}
 
 
 CSVContainer::cell_iterator::cell_iterator(const CSVContainer::RowView* row_view, typename RangeCollection::chain_iterator iter)
@@ -146,5 +179,45 @@ std::ostream& operator<<(std::ostream& os, const CSVContainer::RowView& row_view
 
 void CSVContainer::ReadCSV(const CSVLoadingSettings& settings)
 {
-	throw std::runtime_error("Not implemented!");
+	if (!m_data.empty())
+		throw std::runtime_error("CSVContainer data not empty before loading new CSV. Overwriting not supported.");
+
+	std::ifstream file(settings.filename);
+	std::string line;
+	bool is_first_line = true;
+	size_t i = 0;
+	while (std::getline(file, line))
+	{
+		Row row;
+		split(line.begin(), line.end(), std::back_inserter(row), settings.delimiter, [](auto first, auto last) {
+			return std::string(first, last);
+			}
+		);
+		if (is_first_line)
+		{
+			m_numCols = row.size();
+			is_first_line = false;
+
+			if (settings.has_header)
+			{
+				m_columnNames = row;
+				continue;
+			}
+		}
+		if (row.size() != m_numCols)
+		{
+			throw std::runtime_error("Line " + std::to_string(i) + ": wrong number of cells, should be " + std::to_string(m_numCols));
+		}
+		m_data.push_back(row);
+		++i;
+	}
+	m_numRows = m_data.size();
+
+	if (m_columnNames.empty())
+	{
+		for (size_t j = 0; j < m_numCols; j++)
+			m_columnNames.push_back(std::to_string(j));
+	}
+
+	file.close();
 }
