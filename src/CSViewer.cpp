@@ -4,11 +4,19 @@
 #include "CmdLineParser.h"
 #include "CSViewer.h"
 #include <sstream>
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 using namespace std;
 
 int main(int argc, char** argv)
-{	
+{
+#ifdef WIN32
+	SetConsoleCP(CP_UTF8);
+	SetConsoleOutputCP(CP_UTF8);
+#endif
+
 	try
 	{
 		auto args_parse_result = ParseCmdLineArgs(argc, argv);
