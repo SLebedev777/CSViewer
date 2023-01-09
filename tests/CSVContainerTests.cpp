@@ -201,3 +201,16 @@ TEST(CSVContainerTests, CSVContainerLoadCSVHasHeader)
 	CSVContainer::Frame frame(&csv);
 	print_frame(frame);
 }
+
+TEST(CSVContainerTests, CSVContainerLoadCSVEncodingUtf8NonAsciiSymbols)
+{
+	CSVLoadingSettings settings{ "data/test_utf8_comma_noquote_hasheader_nobadlines_nonascii.csv" };
+	settings.encoding = "utf8";
+	settings.has_header = true;
+
+	CSVContainer csv{ settings };
+
+	CSVContainer::Frame frame(&csv);
+
+	print_frame(frame);
+}
