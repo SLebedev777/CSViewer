@@ -9,8 +9,10 @@ project ("CSViewer")
 
 include_directories(src)
 
+add_subdirectory(externals/libiconv)
+add_subdirectory(externals/googletest)
 add_subdirectory(src)
 add_subdirectory(tests)
-add_subdirectory(lib/googletest)
+
 
 # TODO: Add tests and install targets if needed.

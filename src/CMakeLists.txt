@@ -16,5 +16,7 @@ list(APPEND SOURCES
 
 # Add source to this project's executable.
 add_executable (${BINARY} ${SOURCES})
+# TODO: target_link_libraries(${BINARY} libiconv)
 
 add_library(${BINARY}_lib STATIC ${SOURCES})
+
