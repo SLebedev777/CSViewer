@@ -14,9 +14,17 @@ list(APPEND SOURCES
 	"CSV.cpp"
 )
 
+include_directories(../externals/libiconv/include)
+
+message(Binary dir: ${CMAKE_BINARY_DIR})
+
+find_library(libiconv libiconv ${CMAKE_BINARY_DIR}/externals/libiconv)
+find_library(libcharset libcharset ${CMAKE_BINARY_DIR}/externals/libiconv)
+
 # Add source to this project's executable.
 add_executable (${BINARY} ${SOURCES})
-# TODO: target_link_libraries(${BINARY} libiconv)
+target_link_libraries(${BINARY} ${libiconv} ${libcharset})
 
 add_library(${BINARY}_lib STATIC ${SOURCES})
+target_link_libraries(${BINARY}_lib ${libiconv} ${libcharset})
 

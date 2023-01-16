@@ -62,8 +62,8 @@ set (SRC_LIBCHARSET
   ${LIBICONV_SRC}/libcharset/lib/relocatable-stub.c
 )
 
-add_library(charset ${SRC_LIBCHARSET})
-target_include_directories (charset
+add_library(libcharset ${SRC_LIBCHARSET})
+target_include_directories (libcharset
   PRIVATE
     ${LIBICONV_SRC}/include_win/
     ${LIBICONV_INCLUDE}
@@ -76,16 +76,16 @@ list(APPEND SRC_LIBICONV
 	${LIBICONV_SRC}/lib/iconv.c
 )
 
-add_library (iconv ${SRC_LIBICONV})
+add_library (${PROJECT_NAME} STATIC ${SRC_LIBICONV})
 
-target_include_directories (iconv
+target_include_directories (${PROJECT_NAME}
   PRIVATE
     ${LIBICONV_SRC}/include_win
   PUBLIC
     ${LIBICONV_INCLUDE}
   ) 
 
-target_compile_options (iconv 
+target_compile_options (${PROJECT_NAME} 
   PUBLIC
     -DLIBCHARSET_STATIC 
   PRIVATE 
@@ -94,9 +94,6 @@ target_compile_options (iconv
     -DENABLE_RELOCATABLE=1 -Dset_relocation_prefix=libiconv_set_relocation_prefix -Drelocate=libiconv_relocate 
   ) 
 
-if(MSVC)
-  set_target_properties (iconv   PROPERTIES OUTPUT_NAME "libiconv" )
-  set_target_properties (charset PROPERTIES OUTPUT_NAME "libcharset" )
-endif()
 
-target_link_libraries (iconv charset)
+find_library(LIBCHARSET libcharset ${CMAKE_BINARY_DIR}/externals/libiconv)
+target_link_libraries(${PROJECT_NAME} ${LIBCHARSET})

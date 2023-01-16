@@ -7,6 +7,7 @@ list(APPEND SOURCES
 	"CmdLineParserTests.cpp"
 	"RangeTests.cpp"
 	"CSVContainerTests.cpp"
+	"LibiconvTests.cpp"
 )
 
 # VERY IMPORTANT!!! THIS IS NEEDED THAT GTEST WILL NOT OVERRIDE MAIN PROJECT'S COMPILING&LINKING SETTINGS!
