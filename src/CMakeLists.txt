@@ -3,6 +3,8 @@
 set(SOURCES)
 
 list(APPEND SOURCES
+	"IConvConverter.h"
+	"IConvConverter.cpp"
 	"CSViewer.h"
 	"CSViewer.cpp"
 	"CmdLineParser.h"
@@ -14,7 +16,7 @@ list(APPEND SOURCES
 	"CSV.cpp"
 )
 
-include_directories(../externals/libiconv/include)
+include_directories(../externals)
 
 message(Binary dir: ${CMAKE_BINARY_DIR})
 
