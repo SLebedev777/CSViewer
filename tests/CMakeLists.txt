@@ -18,6 +18,8 @@ add_executable (${BINARY} ${SOURCES})
 
 add_test(NAME ${BINARY} COMMAND ${BINARY})
 
+include_directories(../externals)
+
 target_link_libraries(${BINARY} PUBLIC ${CMAKE_PROJECT_NAME}_lib gtest_main)
 
 # copy test csv files from \data subdirectory to target dir

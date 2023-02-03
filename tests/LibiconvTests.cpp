@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "../externals/libiconv/include/iconv.h"
+#include <libiconv/include/iconv.h>
 #include <string.h>
 #include <vector>
 
