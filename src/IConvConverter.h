@@ -7,6 +7,8 @@ namespace utils
 {
 	class IConvConverter
 	{
+	public:
+
 		enum class EncodingErrorMode
 		{
 			STRICT = 0,
@@ -14,7 +16,6 @@ namespace utils
 			REPLACE
 		};
 
-	public:
 		IConvConverter(const std::string& input_encoding, const std::string& output_encoding);
 		~IConvConverter();
 		
