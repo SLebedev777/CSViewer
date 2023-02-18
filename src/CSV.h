@@ -7,6 +7,7 @@
 #include <limits>
 #include "Range.h"
 
+extern const std::array<std::string, 3> SUPPORTED_INPUT_ENCODINGS;
 
 enum class BadLinesPolicy
 {
@@ -19,7 +20,7 @@ enum class BadLinesPolicy
 struct CSVLoadingSettings
 {
 	explicit CSVLoadingSettings(const std::string& filename,
-		const std::string& encoding = "utf8",
+		const std::string& encoding = "UTF-8",
 		char delimiter = ',',
 		char quote = '"',
 		bool has_header = false,
@@ -162,7 +163,8 @@ public:
 	};
 
 private:
-	void ReadCSV(const CSVLoadingSettings& settings);
+	void readCSV(const CSVLoadingSettings& settings);
+	void checkSettings(const CSVLoadingSettings& settings) const;
 
 private:
 	CSVLoadingSettings m_settings;

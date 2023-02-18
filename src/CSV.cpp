@@ -1,9 +1,12 @@
 #include "CSV.h"
+#include "IConvConverter.h"
 #include <cassert>
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <array>
 
+static const std::array<std::string, 3> SUPPORTED_INPUT_ENCODINGS = { "UTF-8", "CP1251", "CP866" };
 
 namespace
 {
@@ -24,6 +27,8 @@ namespace
 				return;
 			++out;
 			first = ++slice_end;
+			if (first == last)
+				*out = slice_func(slice_end, first);
 		}
 	}
 
@@ -59,7 +64,8 @@ CSVContainer::RowView::RowView(const Row* row, const RangeCollection& col_ranges
 CSVContainer::CSVContainer(const CSVLoadingSettings& settings)
 	: m_settings(settings)
 {
-	ReadCSV(settings);
+	checkSettings(settings);
+	readCSV(settings);
 }
 
 CSVContainer::CSVContainer(std::vector<Row>&& data, std::vector<std::string>&& column_names, const std::string& name)
@@ -177,7 +183,21 @@ std::ostream& operator<<(std::ostream& os, const CSVContainer::RowView& row_view
 	return os;
 }
 
-void CSVContainer::ReadCSV(const CSVLoadingSettings& settings)
+void CSVContainer::checkSettings(const CSVLoadingSettings& settings) const
+{
+	if (std::find(SUPPORTED_INPUT_ENCODINGS.begin(), SUPPORTED_INPUT_ENCODINGS.end(), settings.encoding) ==
+		SUPPORTED_INPUT_ENCODINGS.end())
+	{
+		throw std::logic_error("Unsupported input encoding: " + settings.encoding);
+	}
+
+	if (settings.delimiter == settings.quote)
+	{
+		throw std::logic_error("Delimiter can't be equal to quote symbol!");
+	}
+}
+
+void CSVContainer::readCSV(const CSVLoadingSettings& settings)
 {
 	if (!m_data.empty())
 		throw std::runtime_error("CSVContainer data not empty before loading new CSV. Overwriting not supported.");
@@ -186,10 +206,14 @@ void CSVContainer::ReadCSV(const CSVLoadingSettings& settings)
 	std::string line;
 	bool is_first_line = true;
 	size_t i = 0;
+
 	while (std::getline(file, line))
 	{
+		auto conv = utils::IConvConverter(settings.encoding, "UTF-8");
+		std::string converted_line = conv.convert(line);
+
 		Row row;
-		split(line.begin(), line.end(), std::back_inserter(row), settings.delimiter, [](auto first, auto last) {
+		split(converted_line.begin(), converted_line.end(), std::back_inserter(row), settings.delimiter, [](auto first, auto last) {
 			return std::string(first, last);
 			}
 		);

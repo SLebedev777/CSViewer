@@ -37,8 +37,11 @@ namespace
 		{
 			std::cout << row << std::endl;
 		}
+		std::cout << "shape: " << frame.getRowRanges().totalElements() << " rows x " << 
+			                      frame.getColRanges().totalElements() << " cols" << std::endl;
 	}
 }
+
 
 TEST(CSVContainerTests, CSVContainerMakeContainer)
 {
@@ -205,7 +208,7 @@ TEST(CSVContainerTests, CSVContainerLoadCSVHasHeader)
 TEST(CSVContainerTests, CSVContainerLoadCSVEncodingUtf8NonAsciiSymbols)
 {
 	CSVLoadingSettings settings{ "data/test_utf8_comma_noquote_hasheader_nobadlines_nonascii.csv" };
-	settings.encoding = "utf8";
+	settings.encoding = "UTF-8";
 	settings.has_header = true;
 
 	CSVContainer csv{ settings };
@@ -214,3 +217,43 @@ TEST(CSVContainerTests, CSVContainerLoadCSVEncodingUtf8NonAsciiSymbols)
 
 	print_frame(frame);
 }
+
+TEST(CSVContainerTests, CSVContainerLoadCSVEncodingCp1251NonAsciiSymbols)
+{
+	CSVLoadingSettings settings{ "data/test_cp1251_comma_noquote_hasheader_nobadlines.csv" };
+	settings.encoding = "CP1251";
+	settings.has_header = true;
+
+	CSVContainer csv{ settings };
+
+	CSVContainer::Frame frame(&csv);
+
+	print_frame(frame);
+}
+
+
+TEST(CSVContainerTests, CSVContainerLoadCSVEncodingCp1251NonAsciiSymbolsTabDelimiter)
+{
+	CSVLoadingSettings settings{ "data/test_cp1251_tab_noquote_hasheader_nobadlines.csv" };
+	settings.encoding = "CP1251";
+	settings.has_header = true;
+	settings.delimiter = '\t';
+
+	CSVContainer csv{ settings };
+
+	CSVContainer::Frame frame(&csv);
+
+	print_frame(frame);
+}
+
+TEST(CSVContainerTests, CSVContainerLoadCSVEmptyValues)
+{
+	CSVLoadingSettings settings{ "data/test_utf8_comma_noquote_noheader_nobadlines_emptyvalues.csv" };
+
+	CSVContainer csv{ settings };
+
+	CSVContainer::Frame frame(&csv);
+
+	print_frame(frame);
+}
+
