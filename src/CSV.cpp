@@ -32,6 +32,8 @@ namespace
 			else
 			{
 				slice_end = std::find(first, last, sep);
+				if (std::find(first, slice_end, quote) < slice_end)
+					throw std::logic_error("wrong quotes error");
 			}
 			if ((first == slice_end) && remove_consecutive)
 			{
@@ -227,6 +229,8 @@ void CSVContainer::readCSV(const CSVLoadingSettings& settings)
 
 	while (std::getline(file, line))
 	{
+		++i;
+
 		try
 		{
 			std::string converted_line = conv.convert(line);
@@ -253,17 +257,28 @@ void CSVContainer::readCSV(const CSVLoadingSettings& settings)
 				throw std::runtime_error("wrong number of cells, should be " + std::to_string(m_numCols));
 			}
 			m_data.push_back(row);
-			++i;
 		}
 		catch (std::exception& ex)
 		{
-			throw std::runtime_error("CSV reading error, line " + std::to_string(i) + ": " + ex.what());
+			std::string message = "line " + std::to_string(i) + ": " + ex.what();
+			switch (settings.bad_lines_policy)
+			{
+			case BadLinesPolicy::BL_RAISE:
+				throw std::runtime_error("Error: " + message);
+				break;
+			case BadLinesPolicy::BL_WARN:
+				std::cout << "Warning (line will be skipped): " + message << std::endl;
+				break;
+			case BadLinesPolicy::BL_SKIP:
+			default: break;
+			}
 		}
 		catch (...)
 		{
-			throw std::runtime_error("CSV reading error, line " + std::to_string(i));
+			throw std::runtime_error("CSV reading error, line " + std::to_string(i) + ": unknown error");
 		}
 	}
+
 	m_numRows = m_data.size();
 
 	if (m_columnNames.empty())
