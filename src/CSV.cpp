@@ -11,12 +11,28 @@ static const std::array<std::string, 3> SUPPORTED_INPUT_ENCODINGS = { "UTF-8", "
 namespace
 {
 	template <typename Iter, typename OutIter, typename T, typename SliceFunc>
-	void split(Iter first, Iter last, OutIter out, const T& sep, SliceFunc slice_func,
+	void split(Iter first, Iter last, OutIter out, const T& sep, const T& quote, SliceFunc slice_func,
 		bool remove_consecutive = false)
 	{
 		while (first != last)
 		{
-			auto slice_end(std::find(first, last, sep));
+			Iter slice_end;
+			if (*first == quote)
+			{
+				auto quote_end = std::next(first);
+				do
+				{
+					quote_end = std::find(quote_end, last, quote);
+					if (quote_end == last)
+						throw std::logic_error("wrong quotes error");
+					++quote_end;
+				} while (quote_end != last && *quote_end != sep);
+				slice_end = quote_end;
+			}
+			else
+			{
+				slice_end = std::find(first, last, sep);
+			}
 			if ((first == slice_end) && remove_consecutive)
 			{
 				++first;
@@ -34,10 +50,10 @@ namespace
 
 	// overloading for char separator (for splitting strings)
 	template <typename Iter, typename OutIter, typename SliceFunc>
-	void split(Iter first, Iter last, OutIter out, const char& sep, SliceFunc slice_func)
+	void split(Iter first, Iter last, OutIter out, const char& sep, const char& quote, SliceFunc slice_func)
 	{
 		bool remove_consecutive = sep == ' ';
-		split(first, last, out, sep, slice_func, remove_consecutive);
+		split(first, last, out, sep, quote, slice_func, remove_consecutive);
 	}
 }
 
@@ -207,33 +223,46 @@ void CSVContainer::readCSV(const CSVLoadingSettings& settings)
 	bool is_first_line = true;
 	size_t i = 0;
 
+	auto conv = utils::IConvConverter(settings.encoding, "UTF-8");
+
 	while (std::getline(file, line))
 	{
-		auto conv = utils::IConvConverter(settings.encoding, "UTF-8");
-		std::string converted_line = conv.convert(line);
-
-		Row row;
-		split(converted_line.begin(), converted_line.end(), std::back_inserter(row), settings.delimiter, [](auto first, auto last) {
-			return std::string(first, last);
-			}
-		);
-		if (is_first_line)
+		try
 		{
-			m_numCols = row.size();
-			is_first_line = false;
+			std::string converted_line = conv.convert(line);
 
-			if (settings.has_header)
+			Row row;
+			split(converted_line.begin(), converted_line.end(), std::back_inserter(row), settings.delimiter, settings.quote,
+				[](auto first, auto last) {
+					return std::string(first, last);
+				}
+			);
+			if (is_first_line)
 			{
-				m_columnNames = row;
-				continue;
+				m_numCols = row.size();
+				is_first_line = false;
+
+				if (settings.has_header)
+				{
+					m_columnNames = row;
+					continue;
+				}
 			}
+			if (row.size() != m_numCols)
+			{
+				throw std::runtime_error("wrong number of cells, should be " + std::to_string(m_numCols));
+			}
+			m_data.push_back(row);
+			++i;
 		}
-		if (row.size() != m_numCols)
+		catch (std::exception& ex)
 		{
-			throw std::runtime_error("Line " + std::to_string(i) + ": wrong number of cells, should be " + std::to_string(m_numCols));
+			throw std::runtime_error("CSV reading error, line " + std::to_string(i) + ": " + ex.what());
 		}
-		m_data.push_back(row);
-		++i;
+		catch (...)
+		{
+			throw std::runtime_error("CSV reading error, line " + std::to_string(i));
+		}
 	}
 	m_numRows = m_data.size();
 

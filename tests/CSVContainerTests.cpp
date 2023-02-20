@@ -257,3 +257,14 @@ TEST(CSVContainerTests, CSVContainerLoadCSVEmptyValues)
 	print_frame(frame);
 }
 
+TEST(CSVContainerTests, CSVContainerLoadCSVQuoting)
+{
+	CSVLoadingSettings settings{ "data/test_utf8_comma_quote_hasheader_nobadlines.csv" };
+	settings.has_header = true;
+
+	CSVContainer csv{ settings };
+
+	CSVContainer::Frame frame(&csv);
+
+	print_frame(frame);
+}
