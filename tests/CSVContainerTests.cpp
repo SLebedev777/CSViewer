@@ -269,6 +269,35 @@ TEST(CSVContainerTests, CSVContainerLoadCSVQuoting)
 	print_frame(frame);
 }
 
+TEST(CSVContainerTests, CSVContainerLoadCSVComplexQuoting)
+{
+	CSVLoadingSettings settings{ "data/test_utf8_comma_quote_hasheader_nobadlines_complex_quotes.csv" };
+	settings.has_header = true;
+
+	CSVContainer csv{ settings };
+
+	CSVContainer::Frame frame(&csv);
+
+	print_frame(frame);
+
+	EXPECT_EQ(frame.getColRanges().totalElements(), 2);
+}
+
+TEST(CSVContainerTests, CSVContainerLoadCSVDoubleQuotingErrors)
+{
+	CSVLoadingSettings settings{ "data/test_utf8_comma_quote_hasheader_badlines_double_quotes.csv" };
+	settings.has_header = true;
+	settings.bad_lines_policy = BadLinesPolicy::BL_WARN;
+
+	CSVContainer csv{ settings };
+
+	CSVContainer::Frame frame(&csv);
+
+	print_frame(frame);
+
+	EXPECT_EQ(frame.getColRanges().totalElements(), 2);
+}
+
 TEST(CSVContainerTests, CSVContainerLoadCSVBadLines)
 {
 	CSVLoadingSettings settings{ "data/test_utf8_comma_quote_hasheader_badlines.csv" };

@@ -24,10 +24,20 @@ namespace
 				auto quote_end = std::next(first);
 				do
 				{
-					quote_end = std::find(quote_end, last, quote);
+					quote_end = std::find(quote_end, last, quote);  // find first next quote
 					if (quote_end == last)
 						throw std::logic_error("wrong quotes error");
 					++quote_end;
+					if (quote_end == last)
+						break;
+					if (*quote_end == quote)  // double quote encountered - should skip it
+					{
+						++quote_end;
+						if (quote_end == last)
+							throw std::logic_error("wrong double quotes error");
+						if (*quote_end == sep) // can't be sep after double quotes: sequence "", is wrong (but """, is ok)
+							++quote_end;
+					}
 				} while (quote_end != last && *quote_end != sep);
 				slice_end = quote_end;
 			}
