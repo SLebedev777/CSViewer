@@ -45,6 +45,8 @@ struct CSVLoadingSettings
 	size_t skip_first_lines;
 };
 
+bool operator==(const CSVLoadingSettings& left, const CSVLoadingSettings& right);
+
 
 using Cell = std::string;
 using Row = std::vector<Cell>;

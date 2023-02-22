@@ -6,6 +6,7 @@
 #include <variant>
 #include <array>
 #include <utility>
+#include "CSV.h"
 
 
 // тип значения у опции
@@ -128,6 +129,9 @@ bool operator==(const CmdLineArgsParseResult& left, const CmdLineArgsParseResult
 
 
 CmdLineArgsParseResult ParseCmdLineArgs(int argc, char** argv);
+
+// CSV settings factory function from cmd line args
+CSVLoadingSettings MakeSettingsByCmdLineArgs(const CmdLineArgsParseResult& cmd_line_args);
 
 
 namespace csviewer_internal

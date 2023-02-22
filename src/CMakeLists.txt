@@ -14,6 +14,8 @@ list(APPEND SOURCES
 	"Range.cpp"
 	"CSV.h"
 	"CSV.cpp"
+	"FrameView.h"
+	"FrameView.cpp"
 )
 
 include_directories(../externals)

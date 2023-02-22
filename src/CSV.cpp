@@ -5,6 +5,8 @@
 #include <iostream>
 #include <fstream>
 #include <array>
+#include "CmdLineParser.h"
+
 
 static const std::array<std::string, 3> SUPPORTED_INPUT_ENCODINGS = { "UTF-8", "CP1251", "CP866" };
 
@@ -59,6 +61,16 @@ namespace
 	}
 }
 
+bool operator==(const CSVLoadingSettings& left, const CSVLoadingSettings& right)
+{
+	return left.filename == right.filename &&
+		left.bad_lines_policy == right.bad_lines_policy &&
+		left.delimiter == right.delimiter &&
+		left.encoding == right.encoding &&
+		left.has_header == right.has_header &&
+		left.quote == right.quote &&
+		left.skip_first_lines == right.skip_first_lines;
+}
 
 CSVContainer::cell_iterator::cell_iterator(const CSVContainer::RowView* row_view, typename RangeCollection::chain_iterator iter)
 	: row_view(row_view)
@@ -221,6 +233,9 @@ void CSVContainer::readCSV(const CSVLoadingSettings& settings)
 		throw std::runtime_error("CSVContainer data not empty before loading new CSV. Overwriting not supported.");
 
 	std::ifstream file(settings.filename);
+	if (!file)
+		throw std::runtime_error("Failed to open input CSV file: " + settings.filename);
+
 	std::string line;
 	bool is_first_line = true;
 	size_t i = 0;

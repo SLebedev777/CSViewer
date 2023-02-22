@@ -1,12 +1,13 @@
 #include "CmdLineParser.h"
 #include <sstream>
 #include <algorithm>
+#include "CSV.h"
 
 
 // словарь доступных опций, поддерживаемых программой
 const CmdLineOptionDescriptionContainer g_ValidOptions = {
 	{'H', CmdLineOptionDescriptionChar{'H', CmdLineOptionType::CMDLOPT_NOARG, {}, "Print help"}},
-	{'E', CmdLineOptionDescriptionString{'E', CmdLineOptionType::CMDLOPT_STR, {"cp1251", "utf8"}, "Set encoding for reading input CSV file"}},
+	{'E', CmdLineOptionDescriptionString{'E', CmdLineOptionType::CMDLOPT_STR, {"cp1251", "utf8", "cp866"}, "Set encoding for reading input CSV file"}},
 	{'D', CmdLineOptionDescriptionChar{'D', CmdLineOptionType::CMDLOPT_CHAR, {}, "Set delimiter"}},
 	{'Q', CmdLineOptionDescriptionChar{'Q', CmdLineOptionType::CMDLOPT_CHAR, {'"', '\''}, "Set quoting char to enclose strings"}},
 	{'C', CmdLineOptionDescriptionChar{'C', CmdLineOptionType::CMDLOPT_NOARG, {}, "Read column names from the 1st line of file"}},
@@ -232,3 +233,89 @@ CmdLineArgsParseResult ParseCmdLineArgs(int argc, char** argv)
 
 	return CmdLineArgsParseResult{ parsed_options, input_filename};
  }
+
+CSVLoadingSettings MakeSettingsByCmdLineArgs(const CmdLineArgsParseResult& cmd_line_args)
+{
+	CSVLoadingSettings settings(cmd_line_args.input_filename);
+
+	static std::unordered_map<std::string, BadLinesPolicy> bad_line_policy_str2enum = {
+		{"raise", BadLinesPolicy::BL_RAISE},
+		{"warn", BadLinesPolicy::BL_WARN},
+		{"skip", BadLinesPolicy::BL_SKIP}
+	};
+
+	// convert encoding string from cmd line arg to string that IConvConverter accepts
+	auto encoding_str2settings = [](const auto& str) {
+		std::string result;
+		std::transform(str.begin(), str.end(), std::back_inserter(result), ::std::toupper);
+		auto utf_index = result.find("UTF");
+		if (utf_index != std::string::npos)
+		{
+			if (result[utf_index + 3] != '-')
+				result.insert(utf_index + 3, "-");
+		}
+		return result;
+	};
+
+	for (const auto& option : cmd_line_args.options)
+	{
+		OptionKey option_key = std::visit([](const auto& option) { return option.key; }, option);
+
+		// ugly "hardcode" impl of getting polymorphic value from variant
+		std::optional<char> value_char;
+		std::optional<std::string> value_string;
+		std::optional<size_t> value_number;
+		switch (option.index())
+		{
+		case 0: // char
+		{
+			auto value = std::get<0>(option).value;
+			if (value.has_value())
+				value_char.emplace(*value);
+			break;
+		}
+		case 1: // std::string
+		{
+			auto value = std::get<1>(option).value;
+			if (value.has_value())
+				value_string.emplace(*value);
+			break;
+		}
+		case 2: // size_t
+		{
+			auto value = std::get<2>(option).value;
+			if (value.has_value())
+				value_number.emplace(*value);
+			break;
+		}
+		}
+
+		switch (option_key)
+		{
+		case 'E':
+			settings.encoding = encoding_str2settings(*value_string);
+			break;
+		case 'D':
+			settings.delimiter = *value_char;
+			break;
+		case 'Q':
+			settings.quote = *value_char;
+			break;
+		case 'C':
+			settings.has_header = true;
+			break;
+		case 'B':
+		{
+			auto blp_iter = bad_line_policy_str2enum.find(*value_string);
+			if (blp_iter != bad_line_policy_str2enum.end())
+				settings.bad_lines_policy = blp_iter->second;
+			break;
+		}
+		case 'S':
+			settings.skip_first_lines = *value_number;
+			break;
+		default: break;
+		}
+	}
+	return settings;
+}

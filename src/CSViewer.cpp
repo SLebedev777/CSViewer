@@ -3,6 +3,7 @@
 
 #include "CmdLineParser.h"
 #include "CSViewer.h"
+#include "FrameView.h"
 #include <sstream>
 #ifdef WIN32
 #include <windows.h>
@@ -26,6 +27,8 @@ int main(int argc, char** argv)
 		for (const auto& option : args_parse_result.options)
 			std::visit(CmdLineOptionParseResultVariantPrinter, option);
 
+		CSVLoadingSettings settings = MakeSettingsByCmdLineArgs(args_parse_result);
+
 		// model = LoadCSV(args_parse_result);
 		// while(true)
 		// {
@@ -36,6 +39,14 @@ int main(int argc, char** argv)
 		// view = View(result);
 		// view->print();
 		// }
+
+		auto csv = CSVContainer(settings);
+
+		describe_frame(CSVContainer::Frame(&csv));
+		CSVContainer::Frame head(&csv, 0, 10);
+		std::cout << "Head preview: " << std::endl;
+		print_frame(head);
+
 	}
 	catch (std::exception& ex)
 	{

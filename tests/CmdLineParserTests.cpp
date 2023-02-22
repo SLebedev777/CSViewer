@@ -148,3 +148,17 @@ TEST(CmdLineParserTests, BadNoArgOption) {
 
     EXPECT_ANY_THROW(ParseCmdLineArgs(argc, argv));
 }
+
+TEST(CmdLineParserTests, CmdLineArgsToSettings_Test1) {
+    // ARRANGE
+    char* argv[] = { "csviewer.exe", "-Eutf8", "-D#", "-Q\"", "-Bwarn", "test.csv" };
+    int argc = 6;
+
+    // ACT
+    auto args = ParseCmdLineArgs(argc, argv);
+    auto result_settings = MakeSettingsByCmdLineArgs(args);
+
+    // EXPECT
+    CSVLoadingSettings expected_settings{ "test.csv", "UTF-8", '#', '"', false, BadLinesPolicy::BL_WARN, 0};
+    EXPECT_EQ(result_settings, expected_settings);
+}
