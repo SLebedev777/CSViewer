@@ -157,6 +157,9 @@ public:
 		const RangeCollection& getRowRanges() const { return row_ranges; }
 		const RangeCollection& getColRanges() const { return col_ranges; }
 		RowView getColumnNames() const { return RowView(&csv->m_columnNames, col_ranges); }
+		size_t getNumRows() const { return row_ranges.totalElements(); }
+		size_t getNumCols() const { return col_ranges.totalElements(); }
+		std::pair<size_t, size_t> getShape() const { return { getNumRows(), getNumCols() }; }
 
 	private:
 		const CSVContainer* csv;

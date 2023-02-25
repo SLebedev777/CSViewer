@@ -42,11 +42,13 @@ int main(int argc, char** argv)
 
 		auto csv = CSVContainer(settings);
 
-		describe_frame(CSVContainer::Frame(&csv));
+		CSVContainer::Frame frame(&csv);
+		ConsoleFrameViewOptions view_options;
+		IFrameViewPtr view = std::make_unique<ConsoleFrameView>(frame, view_options);
+		view->renderShape();
 		CSVContainer::Frame head(&csv, 0, 10);
-		std::cout << "Head preview: " << std::endl;
-		print_frame(head);
-
+		IFrameViewPtr view_head = std::make_unique<ConsoleFrameView>(head, view_options);
+		view_head->renderFrame();
 	}
 	catch (std::exception& ex)
 	{
