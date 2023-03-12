@@ -98,7 +98,6 @@ public:
 		CSVContainer::cell_iterator begin() { return cell_iterator(this, col_ranges.chainBegin()); }
 		CSVContainer::cell_iterator end() { return cell_iterator(this, col_ranges.chainEnd()); }
 
-
 		friend std::ostream& operator<<(std::ostream& os, const RowView& row_view);
 
 	private:
@@ -174,7 +173,7 @@ private:
 private:
 	CSVLoadingSettings m_settings;
 	std::vector<Row> m_data;
-	std::vector<std::string> m_columnNames;
+	Row m_columnNames;
 	size_t m_numRows = 0;
 	size_t m_numCols = 0;
 };

@@ -101,6 +101,7 @@ CSVContainer::RowView::RowView(const Row* row, const RangeCollection& col_ranges
 	: row(row), col_ranges(col_ranges.boundBy(Range(0, row->size())))
 {}
 
+
 CSVContainer::CSVContainer(const CSVLoadingSettings& settings)
 	: m_settings(settings)
 {
