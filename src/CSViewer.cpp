@@ -49,6 +49,8 @@ int main(int argc, char** argv)
 		CSVContainer::Frame head(&csv, 0, 10);
 		IFrameViewPtr view_head = std::make_unique<ConsoleFrameView>(head, view_options);
 		view_head->renderFrame();
+		static_cast<ConsoleFrameView*>(view_head.get())->setColumnsLayoutPolicy(ConsoleColumnsLayout::FROM_FIRST_UNTIL_FITS);
+		view_head->renderFrame();
 	}
 	catch (std::exception& ex)
 	{
