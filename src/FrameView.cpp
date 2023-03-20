@@ -52,6 +52,7 @@ size_t ConsoleFrameView::renderGap(std::ostringstream& oss)
 size_t ConsoleFrameView::renderCell(const Cell& cell, size_t actual_cell_width, std::ostringstream& oss)
 {
 	static const std::string ellipsis("...");
+	static const size_t ellipsis_size = Utf8StrLen(ellipsis);
 	const size_t cell_size = Utf8StrLen(cell);
 	if (cell_size < actual_cell_width)
 	{
@@ -60,8 +61,8 @@ size_t ConsoleFrameView::renderCell(const Cell& cell, size_t actual_cell_width, 
 	}
 	else
 	{
-		size_t final_width = max(0, actual_cell_width - ellipsis.size());
-		oss << cell.substr(0, final_width) << ellipsis;
+		size_t final_width = max(0, actual_cell_width - ellipsis_size);
+		oss << Utf8SubStr(cell, 0, final_width) << ellipsis;
 	}
 	return actual_cell_width;
 }
