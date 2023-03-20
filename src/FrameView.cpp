@@ -1,4 +1,5 @@
 #include "FrameView.h"
+#include "UTF8Utils.h"
 #include <iostream>
 #include <utility>
 #ifdef WIN32
@@ -32,17 +33,6 @@ namespace
 		return { width, height };
 	}
 
-	size_t Utf8StrLen(const std::string& utf8_str)
-	{
-		size_t len = 0;
-		const char* p = utf8_str.c_str();
-		while (*p)
-		{
-			if ((*p++ & 0xc0) != 0x80)  // count every first octet (beginning of the block) - it never starts with bits 10
-				++len;
-		}
-		return len;
-	}
 }
 
 
@@ -62,9 +52,10 @@ size_t ConsoleFrameView::renderGap(std::ostringstream& oss)
 size_t ConsoleFrameView::renderCell(const Cell& cell, size_t actual_cell_width, std::ostringstream& oss)
 {
 	static const std::string ellipsis("...");
-	if (cell.size() < actual_cell_width)
+	const size_t cell_size = Utf8StrLen(cell);
+	if (cell_size < actual_cell_width)
 	{
-		std::string pad(actual_cell_width - cell.size(), ' ');
+		std::string pad(actual_cell_width - cell_size, ' ');
 		oss << cell << pad;
 	}
 	else

@@ -5,6 +5,8 @@ set(SOURCES)
 list(APPEND SOURCES
 	"IConvConverter.h"
 	"IConvConverter.cpp"
+	"UTF8Utils.h"
+	"UTF8Utils.cpp"
 	"CSViewer.h"
 	"CSViewer.cpp"
 	"CmdLineParser.h"

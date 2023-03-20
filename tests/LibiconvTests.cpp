@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "IConvConverter.h"
-#include <string.h>
+#include <string>
 #include <vector>
 
 namespace
