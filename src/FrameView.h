@@ -13,8 +13,9 @@ struct ColumnsLayoutDescription
 // на входе:
 //	- фрейм
 //  - актуальная ширина каждой колонки
+//  - ширина разделителя колонок
 // на выходе:  ответ на вопрос, какие колонки фрейма будем рисовать.
-typedef std::function<ColumnsLayoutDescription(const std::vector<size_t>&)> ColumnsLayoutPolicyFunc;
+typedef std::function<ColumnsLayoutDescription(const std::vector<size_t>&, size_t)> ColumnsLayoutPolicyFunc;
 
 
 // интерфейс вьюера фрейма
@@ -63,7 +64,7 @@ struct ConsoleFrameViewOptions
 		size_t head_size = 10,
 		size_t tail_size = 5,
 		bool is_wrap_mode = false,
-		std::string col_sep = "   ",
+		std::string col_sep = "  |  ",
 		ConsoleCellTextAlignment align = ConsoleCellTextAlignment::LEFT,
 		ConsoleColumnsLayout col_layout = ConsoleColumnsLayout::FIRST_AND_LAST
 	) :

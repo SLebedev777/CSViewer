@@ -51,6 +51,8 @@ int main(int argc, char** argv)
 		view_head->renderFrame();
 		static_cast<ConsoleFrameView*>(view_head.get())->setColumnsLayoutPolicy(ConsoleColumnsLayout::FROM_FIRST_UNTIL_FITS);
 		view_head->renderFrame();
+		static_cast<ConsoleFrameView*>(view_head.get())->setColumnsLayoutPolicy(ConsoleColumnsLayout::FROM_FIRST_UNTIL_FITS_AND_LAST);
+		view_head->renderFrame();
 	}
 	catch (std::exception& ex)
 	{

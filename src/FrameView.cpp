@@ -72,7 +72,6 @@ size_t ConsoleFrameView::renderCell(const Cell& cell, size_t actual_cell_width, 
 		size_t final_width = max(0, actual_cell_width - ellipsis.size());
 		oss << cell.substr(0, final_width) << ellipsis;
 	}
-	oss << "  ";
 	return actual_cell_width;
 }
 
@@ -85,6 +84,7 @@ size_t ConsoleFrameView::renderRow(CSVContainer::RowView row, const std::vector<
 	for (; cell_it != row.end(), c < layout_descr.n_first; ++cell_it, ++c)
 	{
 		total_width += renderCell(*cell_it, actual_col_widths[c], oss);
+		total_width += renderColumnSeparator(oss);
 	}
 
 	total_width += renderGap(oss);
@@ -94,6 +94,7 @@ size_t ConsoleFrameView::renderRow(CSVContainer::RowView row, const std::vector<
 		// move to last column cell in this row
 		while (std::next(cell_it) != row.end())
 			++cell_it;
+		total_width += renderColumnSeparator(oss);
 		total_width += renderCell(*cell_it, actual_col_widths.back(), oss);
 	}
 	oss << std::endl;
@@ -110,7 +111,7 @@ void ConsoleFrameView::renderFrame()
 			return min(m_options.max_col_width, w);
 		});
 
-	auto layout_descr = m_colLayoutPolicyFunc(actual_col_widths);
+	auto layout_descr = m_colLayoutPolicyFunc(actual_col_widths, m_options.col_sep.size());
 
 	// render header according to layout
 	size_t total_width = renderRow(m_frame.get().getColumnNames(), actual_col_widths, layout_descr, oss);
@@ -160,7 +161,7 @@ void ConsoleFrameView::calcColumnsMaxTextLength()
 namespace
 {
 	auto ConsoleColumnsLayoutPolicy_FirstAndLast(
-		[](const std::vector<size_t>& actual_col_widths)
+		[](const std::vector<size_t>& actual_col_widths, size_t)
 		{
 			ColumnsLayoutDescription result{ 1, true };
 			return result;
@@ -168,21 +169,37 @@ namespace
 	);
 
 	auto ConsoleColumnsLayoutPolicy_FromFirstUntilFits(
-		[](const std::vector<size_t>& actual_col_widths)
+		[](const std::vector<size_t>& actual_col_widths, size_t col_sep_width)
 		{
-			const size_t GAP_SIZE = 10; // TODO: refactor to option arranged with FrameView
 			auto [console_width, console_height] = GetConsoleSize();
 			size_t n_first = 0;
 			size_t sum_width = 0;
-			while ((n_first < actual_col_widths.size()) && (sum_width < console_width - GAP_SIZE))
+			while ((n_first < actual_col_widths.size()) && (sum_width < console_width - col_sep_width))
 			{
-				sum_width += actual_col_widths[n_first];
+				sum_width += actual_col_widths[n_first] + col_sep_width;
 				++n_first;
 			}
-			ColumnsLayoutDescription result{ n_first, false };
+			ColumnsLayoutDescription result{ n_first - 1, false };
 			return result;
 		}
 	);
+
+	auto ConsoleColumnsLayoutPolicy_FromFirstUntilFitsAndLast(
+		[](const std::vector<size_t>& actual_col_widths, size_t col_sep_width)
+		{
+			auto [console_width, console_height] = GetConsoleSize();
+			size_t n_first = 0;
+			size_t sum_width = 0;
+			while ((n_first < actual_col_widths.size()) && (sum_width < console_width - actual_col_widths.back() - 2*col_sep_width))
+			{
+				sum_width += actual_col_widths[n_first] + col_sep_width;
+				++n_first;
+			}
+			ColumnsLayoutDescription result{ n_first - 1, true };
+			return result;
+		}
+	);
+
 }
 
 ColumnsLayoutPolicyFunc MakeConsoleColumnsLayoutPolicy(ConsoleColumnsLayout layout)
@@ -193,6 +210,8 @@ ColumnsLayoutPolicyFunc MakeConsoleColumnsLayoutPolicy(ConsoleColumnsLayout layo
 		return ConsoleColumnsLayoutPolicy_FirstAndLast;
 	case ConsoleColumnsLayout::FROM_FIRST_UNTIL_FITS:
 		return ConsoleColumnsLayoutPolicy_FromFirstUntilFits;
+	case ConsoleColumnsLayout::FROM_FIRST_UNTIL_FITS_AND_LAST:
+		return ConsoleColumnsLayoutPolicy_FromFirstUntilFitsAndLast;
 	default:
 		return ConsoleColumnsLayoutPolicy_FirstAndLast;
 	}
