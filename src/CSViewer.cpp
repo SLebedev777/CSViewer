@@ -44,6 +44,8 @@ int main(int argc, char** argv)
 
 		CSVContainer::Frame frame(&csv);
 		ConsoleFrameViewOptions view_options;
+		view_options.align = ConsoleCellTextAlignment::RIGHT;
+		view_options.max_col_width = 50;
 		IFrameViewPtr view = std::make_unique<ConsoleFrameView>(frame, view_options);
 		view->renderShape();
 		CSVContainer::Frame head(&csv, 0, 10);

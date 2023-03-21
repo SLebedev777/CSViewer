@@ -57,7 +57,16 @@ size_t ConsoleFrameView::renderCell(const Cell& cell, size_t actual_cell_width, 
 	if (cell_size < actual_cell_width)
 	{
 		std::string pad(actual_cell_width - cell_size, ' ');
-		oss << cell << pad;
+		switch (m_options.align)
+		{
+		case ConsoleCellTextAlignment::RIGHT:
+			oss << pad << cell;
+			break;
+		case ConsoleCellTextAlignment::LEFT:
+		default:
+			oss << cell << pad;
+			break;
+		}
 	}
 	else
 	{
