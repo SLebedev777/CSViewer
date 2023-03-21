@@ -49,31 +49,44 @@ size_t ConsoleFrameView::renderGap(std::ostringstream& oss)
 	return gap.size();
 }
 
-size_t ConsoleFrameView::renderCell(const Cell& cell, size_t actual_cell_width, std::ostringstream& oss)
+size_t ConsoleFrameView::renderCell(const Cell& cell, size_t actual_cell_width, std::ostringstream& oss, size_t start)
 {
 	static const std::string ellipsis("...");
 	static const size_t ellipsis_size = Utf8StrLen(ellipsis);
 	const size_t cell_size = Utf8StrLen(cell);
-	if (cell_size < actual_cell_width)
+	start = (start > cell_size) ? cell_size : start;
+	size_t str_size = cell_size - start;
+	if (str_size < actual_cell_width)
 	{
-		std::string pad(actual_cell_width - cell_size, ' ');
+		std::string pad(actual_cell_width - str_size, ' ');
+		std::string str(Utf8SubStr(cell, start, str_size));
 		switch (m_options.align)
 		{
 		case ConsoleCellTextAlignment::RIGHT:
-			oss << pad << cell;
+			oss << pad << str;
 			break;
 		case ConsoleCellTextAlignment::LEFT:
 		default:
-			oss << cell << pad;
+			oss << str << pad;
 			break;
 		}
+		return start + actual_cell_width;
 	}
 	else
 	{
-		size_t final_width = max(0, actual_cell_width - ellipsis_size);
-		oss << Utf8SubStr(cell, 0, final_width) << ellipsis;
+		if (m_options.is_wrap_mode)
+		{
+			size_t end = min(cell_size, start + actual_cell_width);
+			oss << Utf8SubStr(cell, start, end - start);
+			return end;
+		}
+		else
+		{
+			size_t final_width = max(0, actual_cell_width - ellipsis_size);
+			oss << Utf8SubStr(cell, 0, final_width) << ellipsis;
+			return actual_cell_width;
+		}
 	}
-	return actual_cell_width;
 }
 
 size_t ConsoleFrameView::renderRow(CSVContainer::RowView row, const std::vector<size_t>& actual_col_widths, 
@@ -102,6 +115,67 @@ size_t ConsoleFrameView::renderRow(CSVContainer::RowView row, const std::vector<
 	return total_width;
 }
 
+size_t ConsoleFrameView::renderRowWrapMode(CSVContainer::RowView row, const std::vector<size_t>& actual_col_widths,
+	const ColumnsLayoutDescription& layout_descr, std::ostringstream& oss)
+{
+	const size_t n_renderable_cols = layout_descr.n_first + size_t(layout_descr.need_last);
+
+	std::vector<std::pair<size_t, size_t>> cell_sizes_and_positions(n_renderable_cols, { 0, 0 });
+
+	// get full text length of every cell in row
+	{
+		size_t c = 0;
+		auto cell_it = row.begin();
+		for (; cell_it != row.end(), c < layout_descr.n_first; ++cell_it, ++c)
+		{
+			cell_sizes_and_positions[c].first = Utf8StrLen(*cell_it);
+		}
+		if (layout_descr.need_last && c < m_frame.get().getNumCols())
+		{
+			// move to last column cell in this row
+			while (std::next(cell_it) != row.end())
+				++cell_it;
+			cell_sizes_and_positions[c].first = Utf8StrLen(*cell_it);
+		}
+	}
+	
+	size_t total_width = 0;
+	// render cells line by line until all text is rendered in all row cells
+	while (std::any_of(cell_sizes_and_positions.begin(), cell_sizes_and_positions.end(), [](const auto& item) {
+		return item.first >= item.second;
+		}))
+	{
+		size_t c = 0;
+		total_width = 0;
+		
+		auto cell_it = row.begin();
+		for (; cell_it != row.end(), c < layout_descr.n_first; ++cell_it, ++c)
+		{
+			size_t start = cell_sizes_and_positions[c].second;
+			size_t end = renderCell(*cell_it, actual_col_widths[c], oss, start);
+			cell_sizes_and_positions[c].second = end;
+			total_width += end - start;
+			total_width += renderColumnSeparator(oss);
+		}
+
+		total_width += renderGap(oss);
+
+		if (layout_descr.need_last && c < m_frame.get().getNumCols())
+		{
+			// move to last column cell in this row
+			while (std::next(cell_it) != row.end())
+				++cell_it;
+			total_width += renderColumnSeparator(oss);
+			size_t start = cell_sizes_and_positions.back().second;
+			size_t end = renderCell(*cell_it, actual_col_widths.back(), oss, start);
+			cell_sizes_and_positions.back().second = end;
+			total_width += end - start;
+		}
+		oss << std::endl;
+	}
+	return total_width;
+}
+
 void ConsoleFrameView::renderFrame()
 {
 	std::ostringstream oss;
@@ -114,15 +188,21 @@ void ConsoleFrameView::renderFrame()
 
 	auto layout_descr = m_colLayoutPolicyFunc(actual_col_widths, m_options.col_sep.size());
 
-	// render header according to layout
-	size_t total_width = renderRow(m_frame.get().getColumnNames(), actual_col_widths, layout_descr, oss);
+	// pointer to method to render row depending on whether wrap mode is on or off
+	size_t (ConsoleFrameView::*pRenderRowFunc)(CSVContainer::RowView, const std::vector<size_t>&, const ColumnsLayoutDescription&,
+		std::ostringstream&) = m_options.is_wrap_mode ? &ConsoleFrameView::renderRowWrapMode : &ConsoleFrameView::renderRow;
+
+	// render header according to layout and wrap mode
+	size_t total_width = (*this.*pRenderRowFunc)(m_frame.get().getColumnNames(), actual_col_widths, layout_descr, oss);
 	std::string header_underline(total_width, '-');
 	oss << header_underline << std::endl;
 
-	// render every row according to layout
+	// render every row according to layout and wrap mode
 	for (auto& row : m_frame.get())
 	{
-		renderRow(row, actual_col_widths, layout_descr, oss);
+		(*this.*pRenderRowFunc)(row, actual_col_widths, layout_descr, oss);
+		if (m_options.is_wrap_mode)
+			oss << header_underline << std::endl;
 	}
 
 	std::cout << oss.str() << std::endl;

@@ -109,7 +109,10 @@ private:
 	void calcColumnsMaxTextLength();  // for every column, get maximum length of text (number of Utf-8 symbols) in cells in this column
 	size_t renderRow(CSVContainer::RowView row, const std::vector<size_t>& actual_col_widths, const ColumnsLayoutDescription& layout_descr, 
 		std::ostringstream& oss);
-	size_t renderCell(const Cell& cell, size_t actual_cell_width, std::ostringstream& oss);
+	size_t renderRowWrapMode(CSVContainer::RowView row, const std::vector<size_t>& actual_col_widths, const ColumnsLayoutDescription& layout_descr,
+		std::ostringstream& oss);
+	// In wrap_mode = false, returns number of symbols rendered. In wrap_mode = true, returns current end position of rendered piece of cell text.
+	size_t renderCell(const Cell& cell, size_t actual_cell_width, std::ostringstream& oss, size_t start = 0);
 	size_t renderGap(std::ostringstream& oss);
 	size_t renderColumnSeparator(std::ostringstream& oss);
 
