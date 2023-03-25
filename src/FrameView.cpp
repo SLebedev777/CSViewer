@@ -140,10 +140,11 @@ size_t ConsoleFrameView::renderRowWrapMode(CSVContainer::RowView row, const std:
 	}
 	
 	size_t total_width = 0;
+	size_t num_lines_rendered = 0;
 	// render cells line by line until all text is rendered in all row cells
 	while (std::any_of(cell_sizes_and_positions.begin(), cell_sizes_and_positions.end(), [](const auto& item) {
 		return item.first >= item.second;
-		}))
+		}) && (num_lines_rendered < m_options.max_row_height))
 	{
 		size_t c = 0;
 		total_width = 0;
@@ -172,6 +173,7 @@ size_t ConsoleFrameView::renderRowWrapMode(CSVContainer::RowView row, const std:
 			total_width += end - start;
 		}
 		oss << std::endl;
+		++num_lines_rendered;
 	}
 	return total_width;
 }

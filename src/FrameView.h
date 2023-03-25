@@ -60,7 +60,7 @@ struct ConsoleFrameViewOptions
 {
 	ConsoleFrameViewOptions(
 		size_t max_col_width = 20,
-		size_t max_row_height = 5,
+		size_t max_row_height = std::numeric_limits<size_t>::max(),
 		size_t head_size = 10,
 		size_t tail_size = 5,
 		bool is_wrap_mode = false,
