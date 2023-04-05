@@ -181,6 +181,7 @@ size_t ConsoleFrameView::renderRowWrapMode(CSVContainer::RowView row, const std:
 void ConsoleFrameView::renderFrame()
 {
 	std::ostringstream oss;
+	oss << std::endl;
 	
 	std::vector<size_t> actual_col_widths;
 	std::transform(m_columnsMaxTextLength.begin(), m_columnsMaxTextLength.end(), std::back_inserter(actual_col_widths), 
