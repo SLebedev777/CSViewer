@@ -18,6 +18,10 @@ list(APPEND SOURCES
 	"CSV.cpp"
 	"FrameView.h"
 	"FrameView.cpp"
+	"PromptParser.h"
+	"PromptParser.cpp"
+	"Command.h"
+	"Command.cpp"
 )
 
 include_directories(../externals)

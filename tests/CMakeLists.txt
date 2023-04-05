@@ -9,6 +9,7 @@ list(APPEND SOURCES
 	"CSVContainerTests.cpp"
 	"LibiconvTests.cpp"
 	"UTF8UtilsTests.cpp"
+	"PromptParserTests.cpp"
 )
 
 # VERY IMPORTANT!!! THIS IS NEEDED THAT GTEST WILL NOT OVERRIDE MAIN PROJECT'S COMPILING&LINKING SETTINGS!
