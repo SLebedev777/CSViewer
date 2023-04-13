@@ -1,5 +1,6 @@
 #include "CSV.h"
 #include "IConvConverter.h"
+#include "StringUtils.h"
 #include <cassert>
 #include <algorithm>
 #include <iostream>
@@ -8,68 +9,9 @@
 #include "CmdLineParser.h"
 
 
+
 static const std::array<std::string, 3> SUPPORTED_INPUT_ENCODINGS = { "UTF-8", "CP1251", "CP866" };
 
-namespace
-{
-	template <typename Iter, typename OutIter, typename T, typename SliceFunc>
-	void split(Iter first, Iter last, OutIter out, const T& sep, const T& quote, SliceFunc slice_func,
-		bool remove_consecutive = false)
-	{
-		while (first != last)
-		{
-			Iter slice_end;
-			if (*first == quote)
-			{
-				auto quote_end = std::next(first);
-				do
-				{
-					quote_end = std::find(quote_end, last, quote);  // find first next quote
-					if (quote_end == last)
-						throw std::logic_error("wrong quotes error");
-					++quote_end;
-					if (quote_end == last)
-						break;
-					if (*quote_end == quote)  // double quote encountered - should skip it
-					{
-						++quote_end;
-						if (quote_end == last)
-							throw std::logic_error("wrong double quotes error");
-						if (*quote_end == sep) // can't be sep after double quotes: sequence "", is wrong (but """, is ok)
-							++quote_end;
-					}
-				} while (quote_end != last && *quote_end != sep);
-				slice_end = quote_end;
-			}
-			else
-			{
-				slice_end = std::find(first, last, sep);
-				if (std::find(first, slice_end, quote) < slice_end)
-					throw std::logic_error("wrong quotes error");
-			}
-			if ((first == slice_end) && remove_consecutive)
-			{
-				++first;
-				continue;
-			}
-			*out = slice_func(first, slice_end);
-			if (slice_end == last)
-				return;
-			++out;
-			first = ++slice_end;
-			if (first == last)
-				*out = slice_func(slice_end, first);
-		}
-	}
-
-	// overloading for char separator (for splitting strings)
-	template <typename Iter, typename OutIter, typename SliceFunc>
-	void split(Iter first, Iter last, OutIter out, const char& sep, const char& quote, SliceFunc slice_func)
-	{
-		bool remove_consecutive = sep == ' ';
-		split(first, last, out, sep, quote, slice_func, remove_consecutive);
-	}
-}
 
 bool operator==(const CSVLoadingSettings& left, const CSVLoadingSettings& right)
 {
@@ -256,13 +198,13 @@ void CSVContainer::readCSV(const CSVLoadingSettings& settings)
 	while (std::getline(file, line))
 	{
 		++i;
-
+		
 		try
 		{
 			std::string converted_line = conv.convert(line);
 
 			Row row;
-			split(converted_line.begin(), converted_line.end(), std::back_inserter(row), settings.delimiter, settings.quote,
+			utils::split(converted_line.begin(), converted_line.end(), std::back_inserter(row), settings.delimiter, settings.quote,
 				[](auto first, auto last) {
 					return std::string(first, last);
 				}
