@@ -182,3 +182,10 @@ TEST(PromptParserTests, ParseTokenToKeyValuePair)
 	}
 
 }
+
+TEST(PromptParserTests, ParsePromptInput1)
+{
+	std::string input{ "p row 1, A:B" };
+	
+	auto result = ParsePromptInput(input);
+}

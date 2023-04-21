@@ -1,25 +1,75 @@
 #include "PromptParser.h"
+#include "StringUtils.h"
 #include <sstream>
 #include <vector>
 #include <iomanip>
+#include <list>
+#include <numeric>
 #include "Command.h"
 
 
 const char COMMAND_ARG_RANGE_DELIMITER = ':';
 const char COMMAND_ARG_KEYVALUE_DELIMITER = '=';
+const char COMMAND_KEYWORD_DELIMITER = '|';
+const char COMMAND_ARGS_DELIMITER = ',';
 
+// словарь доступных опций, поддерживаемых программой
+const std::vector<CommandSyntaxDescription> g_ValidPromptCommands = {
+	{"head", "h",
+		{
+			{
+				{ {}, false, {CommandArgNumber{}}, false }
+			}
+		}
+	},
+	{"print", "p",
+		{
+			{   // p [row] [R1, <M1:N1>, <M2:N2>, R2, ...]
+				{ {"row"}, false,
+					{
+						CommandArgNumber{},
+						CommandArgString{},
+						CommandArgNumberRange{},
+						CommandArgStringRange{}
+					}, false
+				}
+			},
+			{   // p col R1, <M1:N1>, <M2:N2>, R2, ...
+				{ {"col"}, true,
+					{
+						CommandArgNumber{},
+						CommandArgString{},
+						CommandArgNumberRange{},
+						CommandArgStringRange{}
+					}, true
+				}
+			},
+			{   // p [row] R1, <M1:N1>, <M2:N2>, R2, ... | col R1, <M1:N1>, <M2:N2>, R2, ... 
+				{ {"row"}, false,
+					{
+						CommandArgNumber{},
+						CommandArgString{},
+						CommandArgNumberRange{},
+						CommandArgStringRange{}
+					}, false
+				},
+				{ {"col"}, true,
+					{
+						CommandArgNumber{},
+						CommandArgString{},
+						CommandArgNumberRange{},
+						CommandArgStringRange{}
+					}, true
+				},
+			}
+
+		}
+	}
+
+};
 
 namespace
-{   /*
-	bool IsFullyQuoted(const std::string& token)
-	{
-		static const char quote('"');
-		if (token.size() < 2)
-			return false;
-		bool is_fully_quoted = (token.front() == quote) && (token.back() == quote);
-		return (is_fully_quoted && (std::count(token.begin(), token.end(), quote) % 2 == 0));
-	}
-	*/
+{
 	std::string RemoveQuotes(const std::string& token)
 	{
 		std::stringstream ss{token};
@@ -121,11 +171,60 @@ namespace
 	{
 		return { v };
 	}
+
+	bool IsKeywordAllowed(const std::string& kw, const CommandSyntaxDescription& command_syntax_descr)
+	{
+		for (auto& syntax_var : command_syntax_descr.keywords_and_args)
+		{
+			for (auto& kw_syntax_descr : syntax_var)
+			{
+				auto it = std::find(kw_syntax_descr.allowed_kw_values.begin(), kw_syntax_descr.allowed_kw_values.end(), kw);
+				if (it == kw_syntax_descr.allowed_kw_values.end())
+					return false;
+			}
+		}
+		return true;
+	}
+
+	void FilterMatchingSyntaxVariants(const CommandSyntaxDescription& command_syntax_descr, 
+		std::list<size_t>& matching_syntax_variants_indices,  /* OUT */
+		size_t curr_kw_index, 
+		const std::string& kw)
+	{
+		matching_syntax_variants_indices.remove_if([&](auto i) {
+			if (curr_kw_index >= command_syntax_descr.keywords_and_args[i].size())
+				return true;
+
+			const auto& allowed_kw_values = command_syntax_descr.keywords_and_args[i][curr_kw_index].allowed_kw_values;
+			auto it = std::find(allowed_kw_values.begin(), allowed_kw_values.end(), kw);
+			// ключевого слова нет среди разрешенных в данном варианте синтаксиса. Надо удалить этот вариант из списка подходящих.
+			return it == allowed_kw_values.end();
+			});
+	}
+
+	void FilterMatchingSyntaxVariants(const CommandSyntaxDescription& command_syntax_descr,
+		std::list<size_t>& matching_syntax_variants_indices,  /* OUT */
+		size_t curr_kw_index,
+		const CommandArgVariant& arg)
+	{
+		matching_syntax_variants_indices.remove_if([&](auto i) {
+			if (curr_kw_index >= command_syntax_descr.keywords_and_args[i].size())
+				return true;
+
+			const auto& allowed_args_types = command_syntax_descr.keywords_and_args[i][curr_kw_index].allowed_args_types;
+			return std::none_of(allowed_args_types.begin(), allowed_args_types.end(),
+				[&arg](auto item) {
+					return arg.index() == item.index();
+				});
+			});
+	}
+
 }
+
 
 std::optional<CommandArgPrimitiveType> ParseTokenToPrimitiveType(const std::string& token)
 {
-	static const char disallowed_chars[] = { ' ', '\t', '\n', '\r', '\f', '\v', COMMAND_ARG_RANGE_DELIMITER, COMMAND_ARG_KEYVALUE_DELIMITER };
+	static const char disallowed_chars[] = { ' ', '\t', '\n', '\r', '\f', '\v', COMMAND_ARG_RANGE_DELIMITER, COMMAND_ARG_KEYVALUE_DELIMITER, '\0'};
 	std::string unquoted_token;
 	int number;
 	if (IsFullyQuoted(token, unquoted_token))
@@ -192,25 +291,101 @@ CommandArgVariant ParseToken(const std::string& token)
 }
 
 
+bool operator==(const CommandKeywordSyntaxDescription& left, const CommandKeywordSyntaxDescription& right)
+{
+	return left.is_kw_required == right.is_kw_required &&
+		left.is_args_required == right.is_args_required &&
+		left.allowed_args_types == right.allowed_args_types &&
+		left.allowed_kw_values == right.allowed_kw_values;
+}
+
+bool operator==(const CommandSyntaxDescription& left, const CommandSyntaxDescription& right)
+{
+	return left.command_full == right.command_full &&
+		right.command_short == right.command_short &&
+		left.keywords_and_args == right.keywords_and_args;
+}
+
+
 CommandParseResult ParsePromptInput(const std::string& prompt_input)
 {
 	CommandParseResult result;
 	std::stringstream ss(prompt_input);
 	std::string command_token;
-	std::vector<std::string> args_tokens;
 	ss >> command_token;
 
-	// parse arguments here
-	if (command_token == "head" || command_token == "h")
+	if (command_token.empty())
+		throw std::runtime_error("ParsePromptInput error: empty command");
+
+	// get valid command descriptions for known command token
+	auto valid_command_it = std::find_if(g_ValidPromptCommands.begin(), g_ValidPromptCommands.end(), [&](const auto& item) {
+		return (item.command_full == command_token) ||
+			   (item.command_short == command_token);
+		});
+	if (valid_command_it == g_ValidPromptCommands.end())
 	{
-		std::string token;
-		ss >> token;
-	}
-	else
-	{
-		throw std::logic_error("unknown command");
+		throw std::runtime_error("ParsePromptInput error: unknown command: " + command_token);
 	}
 
-	result.command = command_token;
+	CommandSyntaxDescription command_syntax_descr = *valid_command_it;
+	result.command = command_syntax_descr.command_full;
+
+	// parse arguments here
+	
+	// алгоритм:
+	// считать ключевое слово
+	// если не подходит - выход с ошибкой
+	// найти конец списка аргументов - это символ | (если нет - конец строки)
+	// разделить аргументы через запятую
+	// по очереди считывать каждый аргумент
+	//  если не подходит по типу - выход с ошибкой
+
+	// TODO: сейчас для простоты делаем все ключевые слова обязательными. Сделать опциональные ключевые слова потом!
+	
+	// Список индексов вариантов синтаксиса команды, которые в данный момент подходят под разбираемую строку ввода.
+	// В начале разбора команды, все варианты синтаксиса считаем подходящими.
+	// Но по мере того, как парсим ключевые слова и аргументы, набор подходящих вариантов синтаксиса будет просеиваться
+	// (неподходящие варианты будут удаляться из списка).
+	// Если список индексов стал пуст - ни один вариант не подходит - то значит строка ввода не валидна, и не может быть превращена
+	// в одну из поддерживаемых программой команд.
+	// По идее, в результате успешного разбора строки ввода, по окончании парсинга, должен остаться лишь 1 какой-то вариант синтаксиса команды.
+	std::list<size_t> matching_syntax_variants_indices(command_syntax_descr.keywords_and_args.size(), 0);
+	std::iota(matching_syntax_variants_indices.begin(), matching_syntax_variants_indices.end(), 0);
+	
+	// Сюда будет писаться индекс текущего разбираемого ключевого слова для каждого варианта синтаксиса.
+	// Когда для данного варианта синтаксиса, какое-то ключевое слово вместе со всеми своими аргументами успешно разобрано,
+	// надо перейти к следующему ключевому слову - тут мы увеличиваем текущий индекс ключевого слова.	
+	size_t kw_index = 0;
+
+	while (!ss.eof())
+	{
+		KeywordAndArgs kw_args;
+
+		std::string kw;
+		ss >> kw;
+
+		FilterMatchingSyntaxVariants(command_syntax_descr, matching_syntax_variants_indices, kw_index, kw);
+		if (matching_syntax_variants_indices.empty())
+			throw std::runtime_error("ParsePromptInput error: unknown keyword: " + kw);
+		
+		kw_args.kw = kw;
+
+		std::string args_str;
+		std::getline(ss >> std::ws, args_str, COMMAND_KEYWORD_DELIMITER);
+		std::stringstream args_ss{ args_str };
+		for (std::string token; std::getline(args_ss >> std::ws, token, COMMAND_ARGS_DELIMITER);)
+		{
+			Trim(token);
+			auto arg = ParseToken(token);
+			FilterMatchingSyntaxVariants(command_syntax_descr, matching_syntax_variants_indices, kw_index, arg);
+			if (matching_syntax_variants_indices.empty())
+				throw std::runtime_error("ParsePromptInput error: arg type not allowed: " + token);
+
+			kw_args.args.push_back(arg);
+		}
+
+		result.keywords_and_args.push_back(std::move(kw_args));
+		++kw_index;
+	}
 	return result;
 }
