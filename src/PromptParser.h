@@ -61,6 +61,9 @@ struct CommandParseResult
 	std::vector<KeywordAndArgs> keywords_and_args;
 };
 
+bool operator==(const KeywordAndArgs& left, const KeywordAndArgs& right);
+bool operator==(const CommandParseResult& left, const CommandParseResult& right);
+
 // описание синтаксиса ключевого слова команды и его аргументов
 struct CommandKeywordSyntaxDescription
 {
@@ -92,3 +95,9 @@ extern const char COMMAND_ARGS_DELIMITER;
 
 // словарь доступных команд с полным описанием вариантов синтаксиса
 extern const std::vector<CommandSyntaxDescription> g_ValidPromptCommands;
+
+
+class PromptParserException : public std::runtime_error
+{
+	using std::runtime_error::runtime_error; // inherit base class ctors
+};

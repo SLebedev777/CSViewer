@@ -28,9 +28,7 @@ const std::vector<CommandSyntaxDescription> g_ValidPromptCommands = {
 				{ {"row"}, false,
 					{
 						CommandArgNumber{},
-						CommandArgString{},
-						CommandArgNumberRange{},
-						CommandArgStringRange{}
+						CommandArgNumberRange{}
 					}, false
 				}
 			},
@@ -48,9 +46,7 @@ const std::vector<CommandSyntaxDescription> g_ValidPromptCommands = {
 				{ {"row"}, false,
 					{
 						CommandArgNumber{},
-						CommandArgString{},
-						CommandArgNumberRange{},
-						CommandArgStringRange{}
+						CommandArgNumberRange{}
 					}, false
 				},
 				{ {"col"}, true,
@@ -252,7 +248,7 @@ CommandArgVariant ParseToken(const std::string& token)
 	{
 		auto operands_tokens = Split(token, COMMAND_ARG_RANGE_DELIMITER);
 		if (operands_tokens.size() != 2 || operands_tokens[0].empty() || operands_tokens[1].empty())
-			throw std::logic_error("Bad range definition: " + token);
+			throw PromptParserException("Bad range definition: " + token);
 
 		auto left_op = ParseTokenToPrimitiveType(operands_tokens[0]);
 		auto right_op = ParseTokenToPrimitiveType(operands_tokens[1]);
@@ -268,26 +264,26 @@ CommandArgVariant ParseToken(const std::string& token)
 			if (left_op_number && right_op_number)
 				return CommandArgNumberRange(*left_op_number, *right_op_number);
 			else
-				throw std::logic_error("Bad operand types for range definition: " + token);
+				throw PromptParserException("Bad operand types for range definition: " + token);
 		}
 		else
-			throw std::logic_error("Bad range definition: " + token);;
+			throw PromptParserException("Bad range definition: " + token);;
 	}
 	else if (std::count(token.begin(), token.end(), COMMAND_ARG_KEYVALUE_DELIMITER) == 1)
 	{
 		auto operands_tokens = Split(token, COMMAND_ARG_KEYVALUE_DELIMITER);
 		if (operands_tokens.size() != 2 || operands_tokens[0].empty() || operands_tokens[1].empty())
-			throw std::logic_error("Bad key-value definition: " + token);
+			throw PromptParserException("Bad key-value definition: " + token);
 
 		auto left_op = ParseTokenToPrimitiveType(operands_tokens[0]);
 		auto right_op = ParseTokenToPrimitiveType(operands_tokens[1]);
 		if (left_op && right_op)
 			return CommandArgKeyValuePair(*left_op, *right_op);
 		else
-			throw std::logic_error("Bad range definition: " + token);
+			throw PromptParserException("Bad range definition: " + token);
 	}
 	else
-		throw std::logic_error("Failed to parse token: " + token);
+		throw PromptParserException("Failed to parse token: " + token);
 }
 
 
@@ -315,7 +311,7 @@ CommandParseResult ParsePromptInput(const std::string& prompt_input)
 	ss >> command_token;
 
 	if (command_token.empty())
-		throw std::runtime_error("ParsePromptInput error: empty command");
+		throw PromptParserException("ParsePromptInput error: empty command");
 
 	// get valid command descriptions for known command token
 	auto valid_command_it = std::find_if(g_ValidPromptCommands.begin(), g_ValidPromptCommands.end(), [&](const auto& item) {
@@ -324,7 +320,7 @@ CommandParseResult ParsePromptInput(const std::string& prompt_input)
 		});
 	if (valid_command_it == g_ValidPromptCommands.end())
 	{
-		throw std::runtime_error("ParsePromptInput error: unknown command: " + command_token);
+		throw PromptParserException("ParsePromptInput error: unknown command: " + command_token);
 	}
 
 	CommandSyntaxDescription command_syntax_descr = *valid_command_it;
@@ -366,7 +362,7 @@ CommandParseResult ParsePromptInput(const std::string& prompt_input)
 
 		FilterMatchingSyntaxVariants(command_syntax_descr, matching_syntax_variants_indices, kw_index, kw);
 		if (matching_syntax_variants_indices.empty())
-			throw std::runtime_error("ParsePromptInput error: unknown keyword: " + kw);
+			throw PromptParserException("ParsePromptInput error: unknown keyword: " + kw);
 		
 		kw_args.kw = kw;
 
@@ -379,7 +375,7 @@ CommandParseResult ParsePromptInput(const std::string& prompt_input)
 			auto arg = ParseToken(token);
 			FilterMatchingSyntaxVariants(command_syntax_descr, matching_syntax_variants_indices, kw_index, arg);
 			if (matching_syntax_variants_indices.empty())
-				throw std::runtime_error("ParsePromptInput error: arg type not allowed: " + token);
+				throw PromptParserException("ParsePromptInput error: arg type not allowed: " + token);
 
 			kw_args.args.push_back(arg);
 		}
@@ -388,4 +384,14 @@ CommandParseResult ParsePromptInput(const std::string& prompt_input)
 		++kw_index;
 	}
 	return result;
+}
+
+bool operator==(const KeywordAndArgs& left, const KeywordAndArgs& right)
+{
+	return (left.kw == right.kw) && (left.args == right.args);
+}
+
+bool operator==(const CommandParseResult& left, const CommandParseResult& right)
+{
+	return (left.command == right.command) && (left.keywords_and_args == right.keywords_and_args);
 }

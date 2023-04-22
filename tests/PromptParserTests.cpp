@@ -43,17 +43,17 @@ TEST(PromptParserTests, ParseTokenToQuotedString)
 	{
 		std::string token("\"Data\" not fully quoted");
 
-		EXPECT_THROW(ParseToken(token), std::logic_error);
+		EXPECT_THROW(ParseToken(token), PromptParserException);
 	}
 	{
 		std::string token("\"Data not fully quoted");
 
-		EXPECT_THROW(ParseToken(token), std::logic_error);
+		EXPECT_THROW(ParseToken(token), PromptParserException);
 	}
 	{
 		std::string token("\"Many\" \"quotes\"");
 
-		EXPECT_THROW(ParseToken(token), std::logic_error);
+		EXPECT_THROW(ParseToken(token), PromptParserException);
 	}
 
 }
@@ -143,11 +143,11 @@ TEST(PromptParserTests, ParseTokenToNumberRange)
 	}
 	{
 		std::string token("5:Text");
-		EXPECT_THROW(ParseToken(token), std::logic_error);
+		EXPECT_THROW(ParseToken(token), PromptParserException);
 	}
 	{
 		std::string token("Many:Colons:In:Token");
-		EXPECT_THROW(ParseToken(token), std::logic_error);
+		EXPECT_THROW(ParseToken(token), PromptParserException);
 	}
 
 }
@@ -183,9 +183,48 @@ TEST(PromptParserTests, ParseTokenToKeyValuePair)
 
 }
 
-TEST(PromptParserTests, ParsePromptInput1)
+TEST(PromptParserTests, ParsePromptInputPrintRowGood)
 {
-	std::string input{ "p row 1, A:B" };
+	std::string input{ "p row 1, 2, 505:888, 999" };
 	
+	CommandParseResult expected {
+		"print",
+		{
+			{"row", {CommandArgNumber{1}, CommandArgNumber{2}, CommandArgNumberRange(505, 888), CommandArgNumber{999}}}
+		}
+	};
+
 	auto result = ParsePromptInput(input);
+
+	EXPECT_EQ(expected, result);
+}
+
+TEST(PromptParserTests, ParsePromptInputPrintRowBad)
+{
+	std::string input{ "p row 1, 2, A:B" };
+
+	EXPECT_THROW(ParsePromptInput(input), PromptParserException);
+}
+
+
+TEST(PromptParserTests, ParsePromptInputPrintColGood)
+{
+	std::string input{ "p col 1, \"Column One\",A:B, \"Col 1\":\"Col 2\",   5:7" };
+
+	CommandParseResult expected{
+		"print",
+		{
+			{"col", {CommandArgNumber{1},
+					 CommandArgString{"Column One"},
+					 CommandArgStringRange("A", "B"),
+					 CommandArgStringRange("Col 1", "Col 2"),
+					 CommandArgNumberRange(5, 7)
+					}
+			}
+		}
+	};
+
+	auto result = ParsePromptInput(input);
+
+	EXPECT_EQ(expected, result);
 }
