@@ -5,6 +5,7 @@
 #include "CSViewer.h"
 #include "FrameView.h"
 #include "PromptParser.h"
+#include "Command.h"
 #include <sstream>
 #ifdef WIN32
 #include <windows.h>
@@ -56,15 +57,20 @@ int main(int argc, char** argv)
 		// main loop
 		while (true)
 		{
+			std::cin.clear();
 			std::cout << std::endl << ">>>";
 			std::string input;
 			std::getline(std::cin, input);
+			CommandParseResult command_parse_result;
 			try
 			{
-				auto command_parse_result = ParsePromptInput(input);
+				command_parse_result = ParsePromptInput(input);
 				std::cout << command_parse_result;
+
+				auto command = MakeCommand(command_parse_result, &csv, view_options);
+				command->Execute();
 			}
-			catch (std::exception& ex)
+			catch (PromptParserException& ex)
 			{
 				std::cout << ex.what() << std::endl;
 			}

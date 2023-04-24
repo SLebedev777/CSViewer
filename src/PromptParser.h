@@ -5,10 +5,8 @@
 #include <variant>
 #include <optional>
 #include <unordered_map>
-#include "Command.h"
+#include <stdexcept>
 
-//class ICommand;
-//typedef std::unique_ptr<ICommand> ICommandPtr;
 
 // Общий синтаксис команды :
 // command [keyword1] [arg1_1, arg1_2, ...] [|] [keyword2] [arg2_1, arg2_2, ...]
