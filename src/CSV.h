@@ -166,6 +166,10 @@ public:
 		RangeCollection col_ranges;
 	};
 
+	void setColumnName(size_t index, const std::string& name);
+	std::string getColumnName(size_t index) const;
+	size_t findColumnIndex(const std::string& name) const;
+
 private:
 	void readCSV(const CSVLoadingSettings& settings);
 	void checkSettings(const CSVLoadingSettings& settings) const;

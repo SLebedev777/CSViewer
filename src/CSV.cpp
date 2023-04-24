@@ -257,3 +257,26 @@ void CSVContainer::readCSV(const CSVLoadingSettings& settings)
 
 	file.close();
 }
+
+void CSVContainer::setColumnName(size_t index, const std::string& name)
+{
+	if (name.empty())
+		throw std::runtime_error("Setting empty column name not allowed");
+	// some other checks should be here too...
+	m_columnNames.at(index) = name;
+}
+
+
+std::string CSVContainer::getColumnName(size_t index) const
+{
+	return m_columnNames.at(index);
+}
+
+size_t CSVContainer::findColumnIndex(const std::string& name) const
+{
+	auto it = std::find(m_columnNames.begin(), m_columnNames.end(), name);
+	if (it == m_columnNames.end())
+		return END;
+	
+	return std::distance(m_columnNames.begin(), it);
+}
