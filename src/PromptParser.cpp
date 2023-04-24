@@ -13,12 +13,16 @@ const char COMMAND_ARG_KEYVALUE_DELIMITER = '=';
 const char COMMAND_KEYWORD_DELIMITER = '|';
 const char COMMAND_ARGS_DELIMITER = ',';
 
+const size_t NO_ARGS = 0;
+const size_t UNLIMITED_ARGS = std::numeric_limits<size_t>::max();
+
+
 // словарь доступных опций, поддерживаемых программой
 const std::vector<CommandSyntaxDescription> g_ValidPromptCommands = {
 	{"head", "h",
 		{
 			{
-				{ {}, false, {CommandArgNumber{}}, false }
+				{ {}, false, {CommandArgNumber{}}, NO_ARGS, 1 }
 			}
 		}
 	},
@@ -29,7 +33,7 @@ const std::vector<CommandSyntaxDescription> g_ValidPromptCommands = {
 					{
 						CommandArgNumber{},
 						CommandArgNumberRange{}
-					}, false
+					}, NO_ARGS, UNLIMITED_ARGS
 				}
 			},
 			{   // p col R1, <M1:N1>, <M2:N2>, R2, ...
@@ -39,7 +43,7 @@ const std::vector<CommandSyntaxDescription> g_ValidPromptCommands = {
 						CommandArgString{},
 						CommandArgNumberRange{},
 						CommandArgStringRange{}
-					}, true
+					}, 1, UNLIMITED_ARGS
 				}
 			},
 			{   // p [row] R1, <M1:N1>, <M2:N2>, R2, ... | col R1, <M1:N1>, <M2:N2>, R2, ... 
@@ -47,7 +51,7 @@ const std::vector<CommandSyntaxDescription> g_ValidPromptCommands = {
 					{
 						CommandArgNumber{},
 						CommandArgNumberRange{}
-					}, false
+					}, 1, UNLIMITED_ARGS
 				},
 				{ {"col"}, true,
 					{
@@ -55,7 +59,7 @@ const std::vector<CommandSyntaxDescription> g_ValidPromptCommands = {
 						CommandArgString{},
 						CommandArgNumberRange{},
 						CommandArgStringRange{}
-					}, true
+					}, 1, UNLIMITED_ARGS
 				},
 			}
 
@@ -182,20 +186,38 @@ namespace
 		return true;
 	}
 
-	void FilterMatchingSyntaxVariants(const CommandSyntaxDescription& command_syntax_descr, 
+	bool FilterMatchingSyntaxVariants(const CommandSyntaxDescription& command_syntax_descr, 
 		std::list<size_t>& matching_syntax_variants_indices,  /* OUT */
 		size_t curr_kw_index, 
 		const std::string& kw)
 	{
+		bool kw_detected = false;
+
 		matching_syntax_variants_indices.remove_if([&](auto i) {
 			if (curr_kw_index >= command_syntax_descr.keywords_and_args[i].size())
 				return true;
 
 			const auto& allowed_kw_values = command_syntax_descr.keywords_and_args[i][curr_kw_index].allowed_kw_values;
 			auto it = std::find(allowed_kw_values.begin(), allowed_kw_values.end(), kw);
-			// ключевого слова нет среди разрешенных в данном варианте синтаксиса. Ќадо удалить этот вариант из списка подход€щих.
-			return it == allowed_kw_values.end();
+			// ключевого слова нет среди разрешенных в данном варианте синтаксиса.
+			if (it == allowed_kw_values.end())
+			{
+				return command_syntax_descr.keywords_and_args[i][curr_kw_index].is_kw_required;
+			}
+			kw_detected = true;
+			return false;  // не удал€ть этот вариант синтаксиса
 			});
+
+		if (std::any_of(matching_syntax_variants_indices.begin(), matching_syntax_variants_indices.end(), [&](auto i) {
+			return command_syntax_descr.keywords_and_args[i][curr_kw_index].is_kw_required;
+			}))
+		{
+			matching_syntax_variants_indices.remove_if([&](auto i) {
+				return command_syntax_descr.keywords_and_args[i][curr_kw_index].is_kw_required == false;
+				});
+		}
+
+			return kw_detected;
 	}
 
 	void FilterMatchingSyntaxVariants(const CommandSyntaxDescription& command_syntax_descr,
@@ -212,6 +234,20 @@ namespace
 				[&arg](auto item) {
 					return arg.index() == item.index();
 				});
+			});
+	}
+
+	void FilterMatchingSyntaxVariants(const CommandSyntaxDescription& command_syntax_descr,
+		std::list<size_t>& matching_syntax_variants_indices,  /* OUT */
+		size_t curr_kw_index,
+		size_t num_args)
+	{
+		matching_syntax_variants_indices.remove_if([&](auto i) {
+			if (curr_kw_index >= command_syntax_descr.keywords_and_args[i].size())
+				return true;
+
+			const auto& kw_syntax = command_syntax_descr.keywords_and_args[i][curr_kw_index];
+			return num_args < kw_syntax.min_args || num_args > kw_syntax.max_args;
 			});
 	}
 
@@ -290,7 +326,8 @@ CommandArgVariant ParseToken(const std::string& token)
 bool operator==(const CommandKeywordSyntaxDescription& left, const CommandKeywordSyntaxDescription& right)
 {
 	return left.is_kw_required == right.is_kw_required &&
-		left.is_args_required == right.is_args_required &&
+		left.min_args == right.min_args &&
+		left.max_args == right.max_args &&
 		left.allowed_args_types == right.allowed_args_types &&
 		left.allowed_kw_values == right.allowed_kw_values;
 }
@@ -357,28 +394,59 @@ CommandParseResult ParsePromptInput(const std::string& prompt_input)
 	{
 		KeywordAndArgs kw_args;
 
+		// логика парсинга первого ключевого слова - которое дл€ каких-то вариантов синтаксиса может быть не об€зательным:
+		// 
+		// 1) запоминаем позицию потока ss
+		// 2) считать первый токен после токена команды с разделителем "пробел" - kw
+		// 3) дл€ каждого варианта синтаксиса команды проводим первичную фильтрацию:
+		//		- если значение kw входит в список допустимых ключ. слов - считаем, что именно это ключ. слово и было введено. ¬ариант синтаксиса считаем подход€щим.
+		//		- иначе:
+		//			- если признак is_kw_required == True - вариант синтаксиса исключаем
+		//			- если признак is_kw_required == False: - вариант синтаксиса считаем (пока) подход€щим.
+		// 4) ≈сли после первичной фильтрации есть хот€ бы 1 подход€щий вариант синтаксиса с is_kw_required == True,
+		//		все имеющиес€ варианты с is_kw_required == False исключаем.
+		// 5) »того, после фильтрации вариантов синтаксиса:
+		//		- если остались только варианты синтаксиса с is_kw_required == True:
+		//				- ключевое слово kw успешно распарсено. ѕерейти к чтению аргументов из потока ss.
+		//		- иначе (остались только варианты синтаксиса с is_kw_required == False):
+		//				- вернутьс€ в потоке ss на позицию до ключевого слова (из п.1)
+		//				- ѕерейти к чтению аргументов из ss.
+
+		std::stringstream::pos_type kw_pos = ss.tellg();
 		std::string kw;
 		ss >> kw;
 
-		FilterMatchingSyntaxVariants(command_syntax_descr, matching_syntax_variants_indices, kw_index, kw);
+		bool kw_detected = FilterMatchingSyntaxVariants(command_syntax_descr, matching_syntax_variants_indices, kw_index, kw);
 		if (matching_syntax_variants_indices.empty())
 			throw PromptParserException("ParsePromptInput error: unknown keyword: " + kw);
 		
-		kw_args.kw = kw;
+		if (kw_detected)
+		{
+			kw_args.kw = kw;
+		}
+		else
+		{
+			ss.seekg(kw_pos);
+		}
 
 		std::string args_str;
 		std::getline(ss >> std::ws, args_str, COMMAND_KEYWORD_DELIMITER);
 		std::stringstream args_ss{ args_str };
-		for (std::string token; std::getline(args_ss >> std::ws, token, COMMAND_ARGS_DELIMITER);)
+		size_t num_args = 0;
+		for (std::string token; std::getline(args_ss >> std::ws, token, COMMAND_ARGS_DELIMITER); num_args++)
 		{
 			Trim(token);
 			auto arg = ParseToken(token);
 			FilterMatchingSyntaxVariants(command_syntax_descr, matching_syntax_variants_indices, kw_index, arg);
 			if (matching_syntax_variants_indices.empty())
-				throw PromptParserException("ParsePromptInput error: arg type not allowed: " + token);
+				throw PromptParserException("ParsePromptInput error: keyword = " + kw + ", arg type not allowed: " + token);
 
 			kw_args.args.push_back(arg);
 		}
+
+		FilterMatchingSyntaxVariants(command_syntax_descr, matching_syntax_variants_indices, kw_index, num_args);
+		if (matching_syntax_variants_indices.empty())
+			throw PromptParserException("ParsePromptInput error: keyword = " + kw + ", wrong number of arguments: " + std::to_string(num_args));
 
 		result.keywords_and_args.push_back(std::move(kw_args));
 		++kw_index;

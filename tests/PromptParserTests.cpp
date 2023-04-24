@@ -199,7 +199,7 @@ TEST(PromptParserTests, ParsePromptInputPrintRowGood)
 	EXPECT_EQ(expected, result);
 }
 
-TEST(PromptParserTests, ParsePromptInputPrintRowBad)
+TEST(PromptParserTests, ParsePromptInputPrintRowBadArgType)
 {
 	std::string input{ "p row 1, 2, A:B" };
 
@@ -227,4 +227,88 @@ TEST(PromptParserTests, ParsePromptInputPrintColGood)
 	auto result = ParsePromptInput(input);
 
 	EXPECT_EQ(expected, result);
+}
+
+TEST(PromptParserTests, ParsePromptInputPrintRowOptionalKeyword)
+{
+	std::string input{ "p 1, 2, 505:888, 999" };
+
+	CommandParseResult expected{
+		"print",
+		{
+			{"", {CommandArgNumber{1}, CommandArgNumber{2}, CommandArgNumberRange(505, 888), CommandArgNumber{999}}}
+		}
+	};
+
+	auto result = ParsePromptInput(input);
+
+	EXPECT_EQ(expected, result);
+}
+
+TEST(PromptParserTests, ParsePromptInputPrintRowOptionalKeywordBadArgType)
+{
+	std::string input{ "p 1, 2, A:B" };
+
+	EXPECT_THROW(ParsePromptInput(input), PromptParserException);
+}
+
+TEST(PromptParserTests, ParsePromptInputHead)
+{
+	std::string input{ "h 10" };
+
+	CommandParseResult expected{
+		"head",
+		{
+			{"", {CommandArgNumber{10}}}
+		}
+	};
+
+	auto result = ParsePromptInput(input);
+
+	EXPECT_EQ(expected, result);
+}
+
+TEST(PromptParserTests, ParsePromptInputHeadWrongNumberOfArgs)
+{
+	std::string input{ "h 10, 20, 30" }; // none or one arg allowed, not more
+
+	EXPECT_THROW(ParsePromptInput(input), PromptParserException);
+}
+
+TEST(PromptParserTests, ParsePromptInputPrintColWrongNumberOfArgs)
+{
+	std::string input{ "print col" }; // at least 1 arg required
+
+	EXPECT_THROW(ParsePromptInput(input), PromptParserException);
+}
+
+TEST(PromptParserTests, ParsePromptInputNoKwNoArgs)
+{
+	{
+		std::string input{ "h" };
+
+		CommandParseResult expected{
+			"head",
+			{
+			}
+		};
+
+		auto result = ParsePromptInput(input);
+
+		EXPECT_EQ(expected, result);
+	}
+	{
+		std::string input{ "p" };
+
+		CommandParseResult expected{
+			"print",
+			{
+			}
+		};
+
+		auto result = ParsePromptInput(input);
+
+		EXPECT_EQ(expected, result);
+	}
+
 }

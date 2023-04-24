@@ -70,7 +70,8 @@ struct CommandKeywordSyntaxDescription
 	std::vector<CommandKeyword> allowed_kw_values;
 	bool is_kw_required;
 	std::vector<CommandArgVariant> allowed_args_types;
-	bool is_args_required;
+	size_t min_args;
+	size_t max_args;
 };
 
 struct CommandSyntaxDescription
@@ -92,6 +93,9 @@ extern const char COMMAND_ARG_RANGE_DELIMITER;
 extern const char COMMAND_ARG_KEYVALUE_DELIMITER;
 extern const char COMMAND_KEYWORD_DELIMITER;
 extern const char COMMAND_ARGS_DELIMITER;
+
+extern const size_t NO_ARGS;
+extern const size_t UNLIMITED_ARGS;
 
 // словарь доступных команд с полным описанием вариантов синтаксиса
 extern const std::vector<CommandSyntaxDescription> g_ValidPromptCommands;
