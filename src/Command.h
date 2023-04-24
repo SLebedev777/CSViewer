@@ -71,3 +71,9 @@ private:
 
 // factory
 ICommandPtr MakeCommand(const CommandParseResult& cpr, const CSVContainer* csv, const ConsoleFrameViewOptions& view_options);
+
+
+class CommandException : public std::runtime_error
+{
+	using std::runtime_error::runtime_error;
+};

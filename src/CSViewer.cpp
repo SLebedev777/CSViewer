@@ -74,6 +74,10 @@ int main(int argc, char** argv)
 			{
 				std::cout << ex.what() << std::endl;
 			}
+			catch (CommandException& ex)
+			{
+				std::cout << ex.what() << std::endl;
+			}
 		}
 	}
 	catch (std::exception& ex)

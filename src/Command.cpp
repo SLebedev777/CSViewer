@@ -71,5 +71,5 @@ ICommandPtr MakeCommand(const CommandParseResult& cpr, const CSVContainer* csv, 
 		return std::make_unique<TailCommand>(csv, view_options, n_rows);
 	}
 	else
-		throw std::runtime_error("Command not implemented");
+		throw CommandException("Command not implemented");
 }
