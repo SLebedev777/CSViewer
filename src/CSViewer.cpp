@@ -4,6 +4,7 @@
 #include "CmdLineParser.h"
 #include "CSViewer.h"
 #include "FrameView.h"
+#include "PromptParser.h"
 #include <sstream>
 #ifdef WIN32
 #include <windows.h>
@@ -58,6 +59,15 @@ int main(int argc, char** argv)
 			std::cout << std::endl << ">>>";
 			std::string input;
 			std::getline(std::cin, input);
+			try
+			{
+				auto command_parse_result = ParsePromptInput(input);
+				std::cout << command_parse_result;
+			}
+			catch (std::exception& ex)
+			{
+				std::cout << ex.what() << std::endl;
+			}
 		}
 	}
 	catch (std::exception& ex)

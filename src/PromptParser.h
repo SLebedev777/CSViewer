@@ -38,16 +38,6 @@ using CommandArgVariant = std::variant<
 >;
 
 
-enum class CommandArgEnumType
-{
-	CMD_ARG_STRING = 0,
-	CMD_ARG_NUMBER,
-	CMD_ARG_STRING_RANGE,
-	CMD_ARG_NUMBER_RANGE,
-	CMD_ARG_KEY_VALUE_PAIR,
-	CMD_ARG_UNKNOWN_TYPE = -1
-};
-
 struct KeywordAndArgs
 {
 	CommandKeyword kw;
@@ -105,3 +95,5 @@ class PromptParserException : public std::runtime_error
 {
 	using std::runtime_error::runtime_error; // inherit base class ctors
 };
+
+std::ostream& operator<<(std::ostream& oss, const CommandParseResult& cpr);

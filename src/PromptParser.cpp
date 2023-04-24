@@ -26,6 +26,50 @@ const std::vector<CommandSyntaxDescription> g_ValidPromptCommands = {
 			}
 		}
 	},
+	{"tail", "t",
+		{
+			{
+				{ {}, false, {CommandArgNumber{}}, NO_ARGS, 1 }
+			}
+		}
+	},
+	{"view", "v",
+		{
+			{
+				{ {}, false, {CommandArgKeyValuePair{}}, 1, UNLIMITED_ARGS }
+			}
+		}
+	},
+	{"cols", "c",
+		{
+			{
+				{ {}, false, {}, NO_ARGS, NO_ARGS }
+			},
+			{
+				{ {}, false, {CommandArgKeyValuePair{}}, 1, UNLIMITED_ARGS }
+			},
+			{
+				{ {}, false, {CommandArgString{}}, 1, UNLIMITED_ARGS }
+			},
+			{
+				{ {"header"}, true, {}, NO_ARGS, NO_ARGS}
+			}
+		}
+	},
+	{"shape", "s",
+		{
+			{
+				{ {}, false, {}, NO_ARGS, NO_ARGS }
+			}
+		}
+	},
+	{"quit", "q",
+		{
+			{
+				{ {}, false, {}, NO_ARGS, NO_ARGS }
+			}
+		}
+	},
 	{"print", "p",
 		{
 			{   // p [row] [R1, <M1:N1>, <M2:N2>, R2, ...]
@@ -436,17 +480,20 @@ CommandParseResult ParsePromptInput(const std::string& prompt_input)
 		for (std::string token; std::getline(args_ss >> std::ws, token, COMMAND_ARGS_DELIMITER); num_args++)
 		{
 			Trim(token);
+			if (num_args > 0 && token.empty())
+				throw PromptParserException("ParsePromptInput error: keyword = " + kw_args.kw + ", empty non-first argument");
+
 			auto arg = ParseToken(token);
 			FilterMatchingSyntaxVariants(command_syntax_descr, matching_syntax_variants_indices, kw_index, arg);
 			if (matching_syntax_variants_indices.empty())
-				throw PromptParserException("ParsePromptInput error: keyword = " + kw + ", arg type not allowed: " + token);
+				throw PromptParserException("ParsePromptInput error: keyword = " + kw_args.kw + ", arg type not allowed: " + token);
 
 			kw_args.args.push_back(arg);
 		}
 
 		FilterMatchingSyntaxVariants(command_syntax_descr, matching_syntax_variants_indices, kw_index, num_args);
 		if (matching_syntax_variants_indices.empty())
-			throw PromptParserException("ParsePromptInput error: keyword = " + kw + ", wrong number of arguments: " + std::to_string(num_args));
+			throw PromptParserException("ParsePromptInput error: keyword = " + kw_args.kw + ", wrong number of arguments: " + std::to_string(num_args));
 
 		result.keywords_and_args.push_back(std::move(kw_args));
 		++kw_index;
@@ -462,4 +509,14 @@ bool operator==(const KeywordAndArgs& left, const KeywordAndArgs& right)
 bool operator==(const CommandParseResult& left, const CommandParseResult& right)
 {
 	return (left.command == right.command) && (left.keywords_and_args == right.keywords_and_args);
+}
+
+std::ostream& operator<<(std::ostream& oss, const CommandParseResult& cpr)
+{
+	oss << "Command: " << cpr.command << std::endl;
+	for (auto kw_args : cpr.keywords_and_args)
+	{
+		oss << "\tKeyword: " << kw_args.kw << ", num_args: " << kw_args.args.size() << std::endl;
+	}
+	return oss;
 }
