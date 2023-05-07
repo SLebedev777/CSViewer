@@ -65,7 +65,9 @@ void ColsCommand::Execute()
 
 void PrintCommand::Execute()
 {
-	throw CommandException("PrintCommand not implemented");
+	CSVContainer::Frame frame(m_csv, m_rowRanges, m_colRanges);
+	IFrameViewPtr view = std::make_unique<ConsoleFrameView>(frame, m_viewOptions);
+	view->renderFrame();
 }
 
 
@@ -115,6 +117,75 @@ ICommandPtr MakeCommand(const CommandParseResult& cpr, CSVContainer* csv, const 
 ICommandPtr MakePrintCommand(const CommandParseResult& cpr, const CSVContainer* csv, const ConsoleFrameViewOptions& view_options)
 {
 	RangeCollection row_ranges, col_ranges;
+	
+	if (cpr.keywords_and_args.empty())
+		return std::make_unique<HeadCommand>(csv, view_options, 10);
+
+	for (const auto& kw_args : cpr.keywords_and_args)
+	{
+		// row
+		if (kw_args.kw.empty() || kw_args.kw == "row")
+		{
+			for (const auto& arg : kw_args.args)
+			{
+				if (const auto row_range(std::get_if<CommandArgNumberRange>(&arg)); row_range)
+				{
+					row_ranges.insert(Range(row_range->first, row_range->second));
+				}
+				else if (const auto row_number(std::get_if<CommandArgNumber>(&arg)); row_number)
+				{
+					auto row = static_cast<size_t>(*row_number);
+					row_ranges.insert(Range(row, row + 1));
+				}
+			}
+		}
+		// col
+		else if (kw_args.kw == "col")
+		{
+			for (const auto& arg : kw_args.args)
+			{
+				if (const auto col_range(std::get_if<CommandArgNumberRange>(&arg)); col_range)
+				{
+					col_ranges.insert(Range(col_range->first, col_range->second));
+				}
+				else if (const auto col_number(std::get_if<CommandArgNumber>(&arg)); col_number)
+				{
+					auto col = static_cast<size_t>(*col_number);
+					col_ranges.insert(Range(col, col + 1));
+				}
+				else if (const auto col_name(std::get_if<CommandArgString>(&arg)); col_name)
+				{
+					size_t index = csv->findColumnIndex(*col_name);
+					if (index == CSVContainer::END)
+						throw CommandException("MakePrintCommand: wrong column name: " + *col_name);
+
+					col_ranges.insert(Range(index, index + 1));
+				}
+				else if (const auto col_str_range(std::get_if<CommandArgStringRange>(&arg)); col_str_range)
+				{
+					size_t index_from = csv->findColumnIndex(col_str_range->first);
+					if (index_from == CSVContainer::END)
+						throw CommandException("MakePrintCommand: wrong column name: " + col_str_range->first);
+
+					size_t index_to = csv->findColumnIndex(col_str_range->second);
+					if (index_to == CSVContainer::END)
+						throw CommandException("MakePrintCommand: wrong column name: " + col_str_range->second);
+
+					col_ranges.insert(Range(index_from, index_to));
+				}
+
+			}
+		}
+		else
+			throw CommandException("MakePrintCommand: unknown keyword: " + kw_args.kw);
+
+
+	}
+
+	CSVContainer::Frame frame(csv);
+	row_ranges = row_ranges.empty() ? frame.getRowRanges() : row_ranges;
+	col_ranges = col_ranges.empty() ? frame.getColRanges() : col_ranges;
+
 	return std::make_unique<PrintCommand>(csv, view_options, row_ranges, col_ranges);
 
 }

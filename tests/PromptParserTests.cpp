@@ -252,6 +252,60 @@ TEST(PromptParserTests, ParsePromptInputPrintRowOptionalKeywordBadArgType)
 	EXPECT_THROW(ParsePromptInput(input), PromptParserException);
 }
 
+TEST(PromptParserTests, ParsePromptInputPrintRowColGood)
+{
+	std::string input{ "p row 1:5, 10, 20:25 | col 1, \"Column One\",A:B, \"Col 1\":\"Col 2\",   5:7" };
+
+	CommandParseResult expected{
+		"print",
+		{
+			{"row", {CommandArgNumberRange(1, 5),
+					 CommandArgNumber{10},
+					 CommandArgNumberRange(20, 25)
+					}
+			},
+			{"col", {CommandArgNumber{1},
+					 CommandArgString{"Column One"},
+					 CommandArgStringRange("A", "B"),
+					 CommandArgStringRange("Col 1", "Col 2"),
+					 CommandArgNumberRange(5, 7)
+					}
+			}
+		}
+	};
+
+	auto result = ParsePromptInput(input);
+
+	EXPECT_EQ(expected, result);
+}
+
+TEST(PromptParserTests, ParsePromptInputPrintRowNoKwColGood)
+{
+	std::string input{ "p 1:5, 10, 20:25|  col 1, \"Column One\",A:B, \"Col 1\":\"Col 2\",   5:7" };
+
+	CommandParseResult expected{
+		"print",
+		{
+			{"", {CommandArgNumberRange(1, 5),
+				  CommandArgNumber{10},
+				  CommandArgNumberRange(20, 25)
+				 }
+			},
+			{"col", {CommandArgNumber{1},
+					 CommandArgString{"Column One"},
+					 CommandArgStringRange("A", "B"),
+					 CommandArgStringRange("Col 1", "Col 2"),
+					 CommandArgNumberRange(5, 7)
+					}
+			}
+		}
+	};
+
+	auto result = ParsePromptInput(input);
+
+	EXPECT_EQ(expected, result);
+}
+
 TEST(PromptParserTests, ParsePromptInputHead)
 {
 	std::string input{ "h 10" };

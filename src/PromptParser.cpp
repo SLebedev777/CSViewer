@@ -104,6 +104,22 @@ const std::vector<CommandSyntaxDescription> g_ValidPromptCommands = {
 						CommandArgStringRange{}
 					}, 1, UNLIMITED_ARGS
 				},
+			},
+			{   // p col R1, <M1:N1>, <M2:N2>, R2, ... | row R1, <M1:N1>, <M2:N2>, R2, ... 
+				{ {"col"}, true,
+					{
+						CommandArgNumber{},
+						CommandArgString{},
+						CommandArgNumberRange{},
+						CommandArgStringRange{}
+					}, 1, UNLIMITED_ARGS
+				},
+				{ {"row"}, true,
+					{
+						CommandArgNumber{},
+						CommandArgNumberRange{}
+					}, 1, UNLIMITED_ARGS
+				}
 			}
 
 		}
