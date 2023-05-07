@@ -261,7 +261,7 @@ void CSVContainer::readCSV(const CSVLoadingSettings& settings)
 void CSVContainer::setColumnName(size_t index, const std::string& name)
 {
 	if (name.empty())
-		throw std::runtime_error("Setting empty column name not allowed");
+		throw std::runtime_error("Setting empty column name not allowed; index = " + std::to_string(index));
 	// some other checks should be here too...
 	m_columnNames.at(index) = name;
 }

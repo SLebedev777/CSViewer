@@ -50,9 +50,9 @@ void ColsCommand::Execute()
 			{
 				m_csv->setColumnName(index, name);
 			}
-			catch (std::out_of_range& ex)
+			catch (std::exception& ex)
 			{
-				throw CommandException("failed to set column name <" + name + "> for index " + std::to_string(index));
+				throw CommandException("failed to set column name <" + name + "> for index " + std::to_string(index) + ", reason: " + std::string(ex.what()));
 			}
 		}
 	}
@@ -126,6 +126,23 @@ ICommandPtr MakeColsCommand(const CommandParseResult& cpr, CSVContainer* csv)
 	if (cpr.keywords_and_args.empty())
 		return std::make_unique<ColsCommand>(csv, index_names);
 
+	if (cpr.keywords_and_args.front().kw == "header")
+	{
+		CSVContainer::Frame header(csv, 0, 2);
+		for (auto& row : header)
+		{
+			size_t index = 0;
+			for (auto& cell : row)
+			{
+				index_names.push_back({index, cell});
+				index++;
+			}
+			break;
+		}
+		return std::make_unique<ColsCommand>(csv, index_names);
+	}
+
+	size_t arg_index = 0;
 	for (const auto& arg : cpr.keywords_and_args.front().args)
 	{
 		if (const auto key_value_pair(std::get_if<CommandArgKeyValuePair>(&arg)); key_value_pair)
@@ -149,6 +166,14 @@ ICommandPtr MakeColsCommand(const CommandParseResult& cpr, CSVContainer* csv)
 			else
 				throw CommandException("MakeColsCommand: wrong key type in key-value pair");
 		}
+		else if (const auto name(std::get_if<CommandArgString>(&arg)); name)
+		{
+			index_names.emplace_back(arg_index, *name);
+		}
+		else
+			throw CommandException("MakeColsCommand: wrong arg type");
+		
+		arg_index++;
 	}
 	return std::make_unique<ColsCommand>(csv, index_names);
 }
