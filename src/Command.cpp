@@ -130,7 +130,7 @@ ICommandPtr MakePrintCommand(const CommandParseResult& cpr, const CSVContainer* 
 			{
 				if (const auto row_range(std::get_if<CommandArgNumberRange>(&arg)); row_range)
 				{
-					row_ranges.insert(Range(row_range->first, row_range->second));
+					row_ranges.insert(Range(row_range->first, row_range->second + 1));
 				}
 				else if (const auto row_number(std::get_if<CommandArgNumber>(&arg)); row_number)
 				{
@@ -146,7 +146,7 @@ ICommandPtr MakePrintCommand(const CommandParseResult& cpr, const CSVContainer* 
 			{
 				if (const auto col_range(std::get_if<CommandArgNumberRange>(&arg)); col_range)
 				{
-					col_ranges.insert(Range(col_range->first, col_range->second));
+					col_ranges.insert(Range(col_range->first, col_range->second + 1));
 				}
 				else if (const auto col_number(std::get_if<CommandArgNumber>(&arg)); col_number)
 				{
@@ -171,7 +171,7 @@ ICommandPtr MakePrintCommand(const CommandParseResult& cpr, const CSVContainer* 
 					if (index_to == CSVContainer::END)
 						throw CommandException("MakePrintCommand: wrong column name: " + col_str_range->second);
 
-					col_ranges.insert(Range(index_from, index_to));
+					col_ranges.insert(Range(index_from, index_to + 1));
 				}
 
 			}
