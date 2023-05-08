@@ -61,8 +61,7 @@ struct ConsoleFrameViewOptions
 	ConsoleFrameViewOptions(
 		size_t max_col_width = 20,
 		size_t max_row_height = std::numeric_limits<size_t>::max(),
-		size_t head_size = 10,
-		size_t tail_size = 5,
+		size_t chunk_size = 50,
 		bool is_wrap_mode = false,
 		std::string col_sep = "  |  ",
 		ConsoleCellTextAlignment align = ConsoleCellTextAlignment::LEFT,
@@ -70,18 +69,16 @@ struct ConsoleFrameViewOptions
 	) :
 		max_col_width(max_col_width),
 		max_row_height(max_row_height),
-		head_size(head_size),
-		tail_size(tail_size),
+		chunk_size(chunk_size),
 		is_wrap_mode(is_wrap_mode),
 		col_sep(col_sep),
 		align(align),
 		col_layout(col_layout)
 	{}
 
-	size_t max_col_width;  // measured in console text lines
+	size_t max_col_width;  // measured in console characters
 	size_t max_row_height;  // measured in console text lines
-	size_t head_size; // measured in console text lines
-	size_t tail_size; // measured in console text lines
+	size_t chunk_size; // measured in number of rows rendered (in wrap mode, a row can occupy many lines)
 	bool is_wrap_mode;
 	std::string col_sep;
 	ConsoleCellTextAlignment align;

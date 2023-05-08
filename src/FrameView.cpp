@@ -12,7 +12,7 @@
 #include <algorithm>
 #include <sstream>
 #include <numeric>
-
+#include <conio.h>
 
 namespace
 {
@@ -201,11 +201,32 @@ void ConsoleFrameView::renderFrame()
 	oss << header_underline << std::endl;
 
 	// render every row according to layout and wrap mode
+	size_t rows_in_chunk = 0;
 	for (auto& row : m_frame.get())
 	{
 		(*this.*pRenderRowFunc)(row, actual_col_widths, layout_descr, oss);
 		if (m_options.is_wrap_mode)
 			oss << header_underline << std::endl;
+
+		rows_in_chunk++;
+		if (rows_in_chunk >= m_options.chunk_size)
+		{
+			std::cout << oss.str() << std::endl;
+
+			std::cout << "Press any key to print next chunk or Escape to stop printing." << std::endl;
+			char c = getch();
+			if (c == 27)
+			{
+				renderShape();
+				return;
+			}
+			else
+			{
+				oss.str("");
+				oss.clear();
+				rows_in_chunk = 0;
+			}
+		}
 	}
 
 	std::cout << oss.str() << std::endl;
