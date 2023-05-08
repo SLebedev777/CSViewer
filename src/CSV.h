@@ -83,14 +83,14 @@ public:
 	};
 
 
-	// helper class of row read-only view 
+	// helper class of read-only view of a row linked with its index in CSV table 
 	class RowView
 	{
 		friend class cell_iterator;
 
 	public:
-		RowView(const Row* row);
-		RowView(const Row* row, const RangeCollection& col_ranges);
+		RowView(const Row* row, size_t index = END);
+		RowView(const Row* row, const RangeCollection& col_ranges, size_t index = END);
 
 		CSVContainer::cell_iterator cbegin() const { return cell_iterator(this, col_ranges.chainBegin()); }
 		CSVContainer::cell_iterator cend() const { return cell_iterator(this, col_ranges.chainEnd()); }
@@ -100,9 +100,12 @@ public:
 
 		friend std::ostream& operator<<(std::ostream& os, const RowView& row_view);
 
+		size_t getIndex() const { return index; }
+
 	private:
 		const Row* row;
 		RangeCollection col_ranges;
+		size_t index;
 	};
 
 

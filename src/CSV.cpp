@@ -35,12 +35,16 @@ const Cell& CSVContainer::cell_iterator::operator*()
 	return row[*iter];
 }
 
-CSVContainer::RowView::RowView(const Row* row)
-	: row(row), col_ranges(Range(0, row->size()))
+CSVContainer::RowView::RowView(const Row* row, size_t index)
+	: row(row)
+	, col_ranges(Range(0, row->size()))
+	, index(index)
 {}
 
-CSVContainer::RowView::RowView(const Row* row, const RangeCollection& col_ranges)
-	: row(row), col_ranges(col_ranges.boundBy(Range(0, row->size())))
+CSVContainer::RowView::RowView(const Row* row, const RangeCollection& col_ranges, size_t index)
+	: row(row)
+	, col_ranges(col_ranges.boundBy(Range(0, row->size())))
+	, index(index)
 {}
 
 
@@ -146,7 +150,7 @@ CSVContainer::row_iterator::row_iterator(const CSVContainer* csv, typename Range
 
 CSVContainer::RowView CSVContainer::row_iterator::operator*()
 {
-	return RowView(&(csv->m_data[*iter]), *col_ranges); 
+	return RowView(&(csv->m_data[*iter]), *col_ranges, *iter); 
 }
 
 CSVContainer::row_iterator CSVContainer::Frame::begin()

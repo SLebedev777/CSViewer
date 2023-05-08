@@ -63,6 +63,7 @@ struct ConsoleFrameViewOptions
 		size_t max_row_height = std::numeric_limits<size_t>::max(),
 		size_t chunk_size = 50,
 		bool is_wrap_mode = false,
+		bool is_print_row_index = true,
 		std::string col_sep = "  |  ",
 		ConsoleCellTextAlignment align = ConsoleCellTextAlignment::LEFT,
 		ConsoleColumnsLayout col_layout = ConsoleColumnsLayout::FIRST_AND_LAST
@@ -71,6 +72,7 @@ struct ConsoleFrameViewOptions
 		max_row_height(max_row_height),
 		chunk_size(chunk_size),
 		is_wrap_mode(is_wrap_mode),
+		is_print_row_index(is_print_row_index),
 		col_sep(col_sep),
 		align(align),
 		col_layout(col_layout)
@@ -80,6 +82,7 @@ struct ConsoleFrameViewOptions
 	size_t max_row_height;  // measured in console text lines
 	size_t chunk_size; // measured in number of rows rendered (in wrap mode, a row can occupy many lines)
 	bool is_wrap_mode;
+	bool is_print_row_index;
 	std::string col_sep;
 	ConsoleCellTextAlignment align;
 	ConsoleColumnsLayout col_layout;
@@ -89,14 +92,7 @@ struct ConsoleFrameViewOptions
 class ConsoleFrameView : public IFrameView
 {
 public:
-	ConsoleFrameView(CSVContainer::Frame& frame, const ConsoleFrameViewOptions& options)
-		: IFrameView(frame)
-		, m_options(options)
-		, m_colLayoutPolicyFunc(MakeConsoleColumnsLayoutPolicy(options.col_layout))
-	{
-		m_columnsMaxTextLength.resize(frame.getNumCols());
-		calcColumnsMaxTextLength();
-	}
+	ConsoleFrameView(CSVContainer::Frame& frame, const ConsoleFrameViewOptions& options);
 	void renderFrame() override;
 	void renderShape() override;
 	void renderColumnNames() override;
@@ -105,13 +101,14 @@ public:
 private:
 	void calcColumnsMaxTextLength();  // for every column, get maximum length of text (number of Utf-8 symbols) in cells in this column
 	size_t renderRow(CSVContainer::RowView row, const std::vector<size_t>& actual_col_widths, const ColumnsLayoutDescription& layout_descr, 
-		std::ostringstream& oss);
+		std::ostringstream& oss, bool is_print_row_index = false);
 	size_t renderRowWrapMode(CSVContainer::RowView row, const std::vector<size_t>& actual_col_widths, const ColumnsLayoutDescription& layout_descr,
-		std::ostringstream& oss);
+		std::ostringstream& oss, bool is_print_row_index = false);
 	// In wrap_mode = false, returns number of symbols rendered. In wrap_mode = true, returns current end position of rendered piece of cell text.
 	size_t renderCell(const Cell& cell, size_t actual_cell_width, std::ostringstream& oss, size_t start = 0);
 	size_t renderGap(std::ostringstream& oss);
 	size_t renderColumnSeparator(std::ostringstream& oss);
+	size_t getNumColumns() const;
 
 private:
 	ConsoleFrameViewOptions m_options;

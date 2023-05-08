@@ -36,6 +36,16 @@ namespace
 }
 
 
+ConsoleFrameView::ConsoleFrameView(CSVContainer::Frame& frame, const ConsoleFrameViewOptions& options)
+	: IFrameView(frame)
+	, m_options(options)
+	, m_colLayoutPolicyFunc(MakeConsoleColumnsLayoutPolicy(options.col_layout))
+{
+	m_columnsMaxTextLength.resize(getNumColumns());
+	calcColumnsMaxTextLength();
+}
+
+
 size_t ConsoleFrameView::renderColumnSeparator(std::ostringstream& oss)
 {
 	oss << m_options.col_sep;
@@ -90,10 +100,19 @@ size_t ConsoleFrameView::renderCell(const Cell& cell, size_t actual_cell_width, 
 }
 
 size_t ConsoleFrameView::renderRow(CSVContainer::RowView row, const std::vector<size_t>& actual_col_widths, 
-	const ColumnsLayoutDescription& layout_descr, std::ostringstream& oss)
+	const ColumnsLayoutDescription& layout_descr, std::ostringstream& oss, bool is_print_row_index)
 {
-	size_t c = 0;
 	size_t total_width = 0;
+
+	if (is_print_row_index)
+	{
+		total_width += renderCell(Cell{ std::to_string(row.getIndex()) }, actual_col_widths[0], oss);
+		total_width += renderColumnSeparator(oss);
+		total_width += renderGap(oss);
+	}
+
+	size_t c = static_cast<int>(is_print_row_index);
+
 	auto cell_it = row.begin();
 	for (; cell_it != row.end(), c < layout_descr.n_first; ++cell_it, ++c)
 	{
@@ -103,7 +122,7 @@ size_t ConsoleFrameView::renderRow(CSVContainer::RowView row, const std::vector<
 
 	total_width += renderGap(oss);
 	
-	if (layout_descr.need_last && c < m_frame.get().getNumCols())
+	if (layout_descr.need_last && c < getNumColumns())
 	{
 		// move to last column cell in this row
 		while (std::next(cell_it) != row.end())
@@ -116,7 +135,7 @@ size_t ConsoleFrameView::renderRow(CSVContainer::RowView row, const std::vector<
 }
 
 size_t ConsoleFrameView::renderRowWrapMode(CSVContainer::RowView row, const std::vector<size_t>& actual_col_widths,
-	const ColumnsLayoutDescription& layout_descr, std::ostringstream& oss)
+	const ColumnsLayoutDescription& layout_descr, std::ostringstream& oss, bool is_print_row_index)
 {
 	const size_t n_renderable_cols = layout_descr.n_first + size_t(layout_descr.need_last);
 
@@ -193,10 +212,23 @@ void ConsoleFrameView::renderFrame()
 
 	// pointer to method to render row depending on whether wrap mode is on or off
 	size_t (ConsoleFrameView::*pRenderRowFunc)(CSVContainer::RowView, const std::vector<size_t>&, const ColumnsLayoutDescription&,
-		std::ostringstream&) = m_options.is_wrap_mode ? &ConsoleFrameView::renderRowWrapMode : &ConsoleFrameView::renderRow;
+		std::ostringstream&, bool) = m_options.is_wrap_mode ? &ConsoleFrameView::renderRowWrapMode : &ConsoleFrameView::renderRow;
+
+	size_t total_width = 0;
 
 	// render header according to layout and wrap mode
-	size_t total_width = (*this.*pRenderRowFunc)(m_frame.get().getColumnNames(), actual_col_widths, layout_descr, oss);
+	if (m_options.is_print_row_index)
+	{
+		Row header{"Index"};
+		auto row_view = m_frame.get().getColumnNames();
+		std::copy(row_view.begin(), row_view.end(), std::back_inserter(header));
+		CSVContainer::RowView header_view(&header);
+		total_width = (*this.*pRenderRowFunc)(header_view, actual_col_widths, layout_descr, oss, false);
+	}
+	else
+	{
+		total_width = (*this.*pRenderRowFunc)(m_frame.get().getColumnNames(), actual_col_widths, layout_descr, oss, false);
+	}
 	std::string header_underline(total_width, '-');
 	oss << header_underline << std::endl;
 
@@ -204,7 +236,7 @@ void ConsoleFrameView::renderFrame()
 	size_t rows_in_chunk = 0;
 	for (auto& row : m_frame.get())
 	{
-		(*this.*pRenderRowFunc)(row, actual_col_widths, layout_descr, oss);
+		(*this.*pRenderRowFunc)(row, actual_col_widths, layout_descr, oss, m_options.is_print_row_index);
 		if (m_options.is_wrap_mode)
 			oss << header_underline << std::endl;
 
@@ -247,18 +279,34 @@ void ConsoleFrameView::renderColumnNames()
 	std::cout << m_frame.get().getColumnNames() << std::endl;
 }
 
+size_t ConsoleFrameView::getNumColumns() const
+{ 
+	return m_frame.get().getNumCols() + static_cast<int>(m_options.is_print_row_index); 
+}
+
 void ConsoleFrameView::calcColumnsMaxTextLength()
 {
-	const auto num_cols = m_frame.get().getNumCols();
+	const auto num_cols = getNumColumns();
 	std::fill(m_columnsMaxTextLength.begin(), m_columnsMaxTextLength.end(), 0);
-	std::vector<size_t> row_widths(num_cols, 0);
+	std::vector<size_t> row_widths(m_frame.get().getNumCols(), 0);  // doesn't depend on index showing or not
+
+	if (m_options.is_print_row_index)
+	{
+		auto last_range = m_frame.get().getRowRanges().cend();
+		--last_range;
+		size_t index_strlen = std::to_string(last_range->to).size() + 1;
+		m_columnsMaxTextLength[0] = index_strlen;
+	}
+
+	int col_start = static_cast<int>(m_options.is_print_row_index); // 0 if index is not shown, 1 if index is shown
+
 	for (const auto& row : m_frame.get())
 	{
 		std::transform(row.cbegin(), row.cend(), row_widths.begin(), Utf8StrLen);
-		for (size_t i = 0; i < num_cols; ++i)
+		for (size_t i = 0; i < row_widths.size(); ++i)
 		{
-			if (row_widths[i] > m_columnsMaxTextLength[i])
-				m_columnsMaxTextLength[i] = row_widths[i];
+			if (row_widths[i] > m_columnsMaxTextLength[i + col_start])
+				m_columnsMaxTextLength[i + col_start] = row_widths[i];
 		}
 	}
 }
