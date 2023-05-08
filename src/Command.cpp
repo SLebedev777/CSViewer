@@ -1,6 +1,7 @@
 #include "Command.h"
 #include "FrameView.h"
 #include <conio.h>
+#include <algorithm>
 
 
 void ShapeCommand::Execute()
@@ -21,6 +22,19 @@ void QuitCommand::Execute()
 			throw std::runtime_error("Quitting application");
 		else if (c == 'n' || c == 'N')
 			return;
+	}
+}
+
+void HelpCommand::Execute()
+{
+	std::cout << "Available commands:" << std::endl;
+	auto sorted_commands = g_ValidPromptCommands;
+	std::sort(sorted_commands.begin(), sorted_commands.end(), [](const auto& cmd_a, const auto& cmd_b) {
+		return cmd_a.command_full < cmd_b.command_full;
+		});
+	for (const auto& cmd_descr : sorted_commands)
+	{
+		std::cout << cmd_descr.command_full << " (short name: " << cmd_descr.command_short << ") - " << cmd_descr.help_string << std::endl;
 	}
 }
 
@@ -80,6 +94,10 @@ ICommandPtr MakeCommand(const CommandParseResult& cpr, CSVContainer* csv, const 
 	else if (cpr.command == "quit")
 	{
 		return std::make_unique<QuitCommand>();
+	}
+	else if (cpr.command == "help")
+	{
+		return std::make_unique<HelpCommand>();
 	}
 	else if (cpr.command == "head")
 	{

@@ -35,6 +35,14 @@ public:
 };
 
 
+class HelpCommand : public ICommand
+{
+public:
+	HelpCommand() = default;
+	void Execute() override;
+};
+
+
 class HeadCommand : public ICommand
 {
 public:

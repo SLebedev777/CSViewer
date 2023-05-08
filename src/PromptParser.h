@@ -66,6 +66,7 @@ struct CommandSyntaxDescription
 {
 	std::string command_full;
 	std::string command_short;
+	std::string help_string;
 	std::vector<std::vector<CommandKeywordSyntaxDescription>> keywords_and_args;  // вектор вариантов синтаксиса команды
 };
 

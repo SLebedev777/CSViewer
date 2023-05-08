@@ -16,30 +16,30 @@ const size_t NO_ARGS = 0;
 const size_t UNLIMITED_ARGS = std::numeric_limits<size_t>::max();
 
 
-// словарь доступных опций, поддерживаемых программой
+// словарь доступных команд с полным описанием вариантов синтаксиса
 const std::vector<CommandSyntaxDescription> g_ValidPromptCommands = {
-	{"head", "h",
+	{"head", "h", "print first N rows",
 		{
 			{
 				{ {}, false, {CommandArgNumber{}}, NO_ARGS, 1 }
 			}
 		}
 	},
-	{"tail", "t",
+	{"tail", "t", "print last N rows",
 		{
 			{
 				{ {}, false, {CommandArgNumber{}}, NO_ARGS, 1 }
 			}
 		}
 	},
-	{"view", "v",
+	{"view", "v", "set view options",
 		{
 			{
 				{ {}, false, {CommandArgKeyValuePair{}}, 1, UNLIMITED_ARGS }
 			}
 		}
 	},
-	{"cols", "c",
+	{"cols", "c", "print or set column names",
 		{
 			{
 				{ {}, false, {}, NO_ARGS, NO_ARGS }
@@ -55,21 +55,28 @@ const std::vector<CommandSyntaxDescription> g_ValidPromptCommands = {
 			}
 		}
 	},
-	{"shape", "s",
+	{"shape", "s", "print CSV shape as rows x columns",
 		{
 			{
 				{ {}, false, {}, NO_ARGS, NO_ARGS }
 			}
 		}
 	},
-	{"quit", "q",
+	{"quit", "q", "quit application",
 		{
 			{
 				{ {}, false, {}, NO_ARGS, NO_ARGS }
 			}
 		}
 	},
-	{"print", "p",
+	{"help", "?", "this help",
+		{
+			{
+				{ {}, false, {}, NO_ARGS, NO_ARGS }
+			}
+		}
+	},
+	{"print", "p", "print with subsample by rows and/or columns",
 		{
 			{   // p [row] [R1, <M1:N1>, <M2:N2>, R2, ...]
 				{ {"row"}, false,
