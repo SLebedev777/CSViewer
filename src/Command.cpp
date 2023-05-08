@@ -118,9 +118,6 @@ ICommandPtr MakePrintCommand(const CommandParseResult& cpr, const CSVContainer* 
 {
 	RangeCollection row_ranges, col_ranges;
 	
-	if (cpr.keywords_and_args.empty())
-		return std::make_unique<HeadCommand>(csv, view_options, 10);
-
 	for (const auto& kw_args : cpr.keywords_and_args)
 	{
 		// row
@@ -178,8 +175,6 @@ ICommandPtr MakePrintCommand(const CommandParseResult& cpr, const CSVContainer* 
 		}
 		else
 			throw CommandException("MakePrintCommand: unknown keyword: " + kw_args.kw);
-
-
 	}
 
 	CSVContainer::Frame frame(csv);
