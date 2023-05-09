@@ -66,7 +66,7 @@ size_t ConsoleFrameView::renderCell(const Cell& cell, size_t actual_cell_width, 
 	const size_t cell_size = Utf8StrLen(cell);
 	start = (start > cell_size) ? cell_size : start;
 	size_t str_size = cell_size - start;
-	if (str_size < actual_cell_width)
+	if (str_size <= actual_cell_width)
 	{
 		std::string pad(actual_cell_width - str_size, ' ');
 		std::string str(Utf8SubStr(cell, start, str_size));
@@ -108,7 +108,6 @@ size_t ConsoleFrameView::renderRow(CSVContainer::RowView row, const std::vector<
 	{
 		total_width += renderCell(Cell{ std::to_string(row.getIndex()) }, actual_col_widths[0], oss);
 		total_width += renderColumnSeparator(oss);
-		total_width += renderGap(oss);
 	}
 
 	size_t c = static_cast<int>(is_print_row_index);
@@ -219,7 +218,7 @@ void ConsoleFrameView::renderFrame()
 	// render header according to layout and wrap mode
 	if (m_options.is_print_row_index)
 	{
-		Row header{"Index"};
+		Row header{""};
 		auto row_view = m_frame.get().getColumnNames();
 		std::copy(row_view.begin(), row_view.end(), std::back_inserter(header));
 		CSVContainer::RowView header_view(&header);
@@ -300,6 +299,15 @@ void ConsoleFrameView::calcColumnsMaxTextLength()
 
 	int col_start = static_cast<int>(m_options.is_print_row_index); // 0 if index is not shown, 1 if index is shown
 
+	// first, calc widths by header
+	auto row = m_frame.get().getColumnNames();
+	std::transform(row.cbegin(), row.cend(), row_widths.begin(), Utf8StrLen);
+	for (size_t i = 0; i < row_widths.size(); ++i)
+	{
+		m_columnsMaxTextLength[i + col_start] = row_widths[i];
+	}
+
+	// then by rows content
 	for (const auto& row : m_frame.get())
 	{
 		std::transform(row.cbegin(), row.cend(), row_widths.begin(), Utf8StrLen);
