@@ -62,7 +62,7 @@ struct ConsoleFrameViewOptions
 		size_t max_col_width = 20,
 		size_t max_row_height = std::numeric_limits<size_t>::max(),
 		size_t chunk_size = 50,
-		bool is_wrap_mode = false,
+		bool is_wrap_mode = true,
 		bool is_print_row_index = true,
 		std::string col_sep = "  |  ",
 		ConsoleCellTextAlignment align = ConsoleCellTextAlignment::LEFT,

@@ -110,7 +110,7 @@ size_t ConsoleFrameView::renderRow(CSVContainer::RowView row, const std::vector<
 		total_width += renderColumnSeparator(oss);
 	}
 
-	size_t c = static_cast<int>(is_print_row_index);
+	auto c = static_cast<size_t>(is_print_row_index);
 
 	auto cell_it = row.begin();
 	for (; cell_it != row.end(), c < layout_descr.n_first; ++cell_it, ++c)
@@ -136,13 +136,22 @@ size_t ConsoleFrameView::renderRow(CSVContainer::RowView row, const std::vector<
 size_t ConsoleFrameView::renderRowWrapMode(CSVContainer::RowView row, const std::vector<size_t>& actual_col_widths,
 	const ColumnsLayoutDescription& layout_descr, std::ostringstream& oss, bool is_print_row_index)
 {
-	const size_t n_renderable_cols = layout_descr.n_first + size_t(layout_descr.need_last);
+	const size_t n_renderable_cols = layout_descr.n_first + static_cast<size_t>(layout_descr.need_last);
 
 	std::vector<std::pair<size_t, size_t>> cell_sizes_and_positions(n_renderable_cols, { 0, 0 });
 
+	Cell index_cell{ std::to_string(row.getIndex()) };
+
+	const auto shift = static_cast<size_t>(is_print_row_index);  // 0/1
+
 	// get full text length of every cell in row
 	{
-		size_t c = 0;
+		if (is_print_row_index)
+		{
+			cell_sizes_and_positions[0].first = Utf8StrLen(index_cell);
+		}
+
+		size_t c = shift;
 		auto cell_it = row.begin();
 		for (; cell_it != row.end(), c < layout_descr.n_first; ++cell_it, ++c)
 		{
@@ -153,20 +162,30 @@ size_t ConsoleFrameView::renderRowWrapMode(CSVContainer::RowView row, const std:
 			// move to last column cell in this row
 			while (std::next(cell_it) != row.end())
 				++cell_it;
-			cell_sizes_and_positions[c].first = Utf8StrLen(*cell_it);
+			cell_sizes_and_positions.back().first = Utf8StrLen(*cell_it);
 		}
 	}
 	
-	size_t total_width = 0;
+	size_t total_width = 0;  // total length of current output line
+	size_t max_total_width = 0; // max(total_width) for all lines
 	size_t num_lines_rendered = 0;
 	// render cells line by line until all text is rendered in all row cells
 	while (std::any_of(cell_sizes_and_positions.begin(), cell_sizes_and_positions.end(), [](const auto& item) {
 		return item.first >= item.second;
 		}) && (num_lines_rendered < m_options.max_row_height))
 	{
-		size_t c = 0;
 		total_width = 0;
-		
+
+		if (is_print_row_index)
+		{
+			size_t start = cell_sizes_and_positions[0].second;
+			size_t end = renderCell(index_cell, actual_col_widths[0], oss, start);
+			cell_sizes_and_positions[0].second = end;
+			total_width += end - start;
+			total_width += renderColumnSeparator(oss);
+		}
+
+		size_t c = shift;
 		auto cell_it = row.begin();
 		for (; cell_it != row.end(), c < layout_descr.n_first; ++cell_it, ++c)
 		{
@@ -192,8 +211,10 @@ size_t ConsoleFrameView::renderRowWrapMode(CSVContainer::RowView row, const std:
 		}
 		oss << std::endl;
 		++num_lines_rendered;
+		if (total_width > max_total_width)
+			max_total_width = total_width;
 	}
-	return total_width;
+	return max_total_width;
 }
 
 void ConsoleFrameView::renderFrame()
