@@ -85,7 +85,67 @@ void PrintCommand::Execute()
 }
 
 
-ICommandPtr MakeCommand(const CommandParseResult& cpr, CSVContainer* csv, const ConsoleFrameViewOptions& view_options)
+ConsoleFrameViewOptionsReflection::ConsoleFrameViewOptionsReflection(ConsoleFrameViewOptions& obj)
+	: ClassReflection<ConsoleFrameViewOptions>::ClassReflection(obj)
+{
+	m_reflection["wrap"] = 
+		{
+			[this]() { std::cout << "wrap: " << m_obj.is_wrap_mode << std::endl; },
+			[this](const std::string& value) { m_obj.is_wrap_mode = static_cast<bool>(std::stoi(value)); }
+		};
+	m_reflection["index"] =
+	{
+		[this]() { std::cout << "index: " << m_obj.is_print_row_index << std::endl; },
+		[this](const std::string& value) { m_obj.is_print_row_index = static_cast<bool>(std::stoi(value)); }
+	};
+
+}
+
+
+void ViewCommand::Execute()
+{
+	static ConsoleFrameViewOptionsReflection options_reflection(m_viewOptions);
+
+	if (m_cpr.keywords_and_args.empty())
+	{
+		std::cout << "Current view options: " << std::endl;
+		options_reflection.get_all();
+		return;
+	}
+
+	ConsoleFrameViewOptions new_options(m_viewOptions);
+	ConsoleFrameViewOptionsReflection new_options_reflection(new_options);
+
+	for (const auto& arg : m_cpr.keywords_and_args.front().args)
+	{
+		if (const auto key_value_pair(std::get_if<CommandArgKeyValuePair>(&arg)); key_value_pair)
+		{
+			const auto param(std::get_if<CommandArgString>(&key_value_pair->first));
+			if (!param)
+				throw CommandException("MakeViewCommand: wrong key type in key-value pair, should be string");
+
+			const auto value_str(std::get_if<CommandArgString>(&key_value_pair->second));
+			const auto value_int(std::get_if<CommandArgNumber>(&key_value_pair->second));
+
+			try
+			{
+				new_options_reflection.set(*param, std::to_string(*value_int));
+			}
+			catch (std::runtime_error& ex)
+			{
+				throw CommandException(ex.what());
+			}
+
+		}
+		else
+			throw CommandException("MakeViewCommand: wrong arg type");
+	}
+
+	m_viewOptions = new_options;
+}
+
+
+ICommandPtr MakeCommand(const CommandParseResult& cpr, CSVContainer* csv, ConsoleFrameViewOptions& view_options)
 {
 	if (cpr.command == "shape")
 	{
@@ -126,6 +186,10 @@ ICommandPtr MakeCommand(const CommandParseResult& cpr, CSVContainer* csv, const 
 	else if (cpr.command == "print")
 	{
 		return MakePrintCommand(cpr, csv, view_options);
+	}
+	else if (cpr.command == "view")
+	{
+		return std::make_unique<ViewCommand>(cpr, view_options);
 	}
 	else
 		throw CommandException("Command not implemented");

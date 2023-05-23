@@ -3,6 +3,7 @@
 #include "PromptParser.h"
 #include "FrameView.h"
 #include <memory>
+#include "ClassReflection.h"
 
 class ICommand
 {
@@ -111,9 +112,29 @@ private:
 	RangeCollection m_colRanges;
 };
 
+// bind string "tags" to members of ConsoleFrameViewOptions struct
+struct ConsoleFrameViewOptionsReflection : ClassReflection<ConsoleFrameViewOptions>
+{
+	explicit ConsoleFrameViewOptionsReflection(ConsoleFrameViewOptions& opj);
+};
+
+class ViewCommand : public ICommand
+{
+public:
+	ViewCommand(const CommandParseResult& cpr, ConsoleFrameViewOptions& view_options)
+		: m_cpr(cpr)
+		, m_viewOptions(view_options)
+	{}
+	void Execute() override;
+
+private:
+	CommandParseResult m_cpr;
+	ConsoleFrameViewOptions& m_viewOptions;
+};
+
 
 // factory
-ICommandPtr MakeCommand(const CommandParseResult& cpr, CSVContainer* csv, const ConsoleFrameViewOptions& view_options);
+ICommandPtr MakeCommand(const CommandParseResult& cpr, CSVContainer* csv, ConsoleFrameViewOptions& view_options);
 ICommandPtr MakePrintCommand(const CommandParseResult& cpr, const CSVContainer* csv, const ConsoleFrameViewOptions& view_options);
 ICommandPtr MakeColsCommand(const CommandParseResult& cpr, CSVContainer* csv);
 

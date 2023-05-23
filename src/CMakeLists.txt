@@ -21,6 +21,7 @@ list(APPEND SOURCES
 	"FrameView.cpp"
 	"PromptParser.h"
 	"PromptParser.cpp"
+	"ClassReflection.h"
 	"Command.h"
 	"Command.cpp"
 )
