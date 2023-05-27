@@ -9,6 +9,15 @@ project ("CSViewer")
 
 include_directories(src)
 
+# for gtest linking on Windows
+if(MSVC)
+    add_compile_options(
+        $<$<CONFIG:>:/MD>
+        $<$<CONFIG:Debug>:/MDd>
+        $<$<CONFIG:Release>:/MD>
+    )
+endif()
+
 add_subdirectory(externals/libiconv)
 add_subdirectory(externals/googletest)
 add_subdirectory(src)

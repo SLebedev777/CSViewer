@@ -62,21 +62,14 @@ set (SRC_LIBCHARSET
   ${LIBICONV_SRC}/libcharset/lib/relocatable-stub.c
 )
 
-add_library(libcharset ${SRC_LIBCHARSET})
-target_include_directories (libcharset
-  PRIVATE
-    ${LIBICONV_SRC}/include_win/
-    ${LIBICONV_INCLUDE}
-) 
-
-
 # iconv
 set(SRC_LIBICONV)
 list(APPEND SRC_LIBICONV
 	${LIBICONV_SRC}/lib/iconv.c
+    ${LIBICONV_SRC}/lib/relocatable.c
 )
 
-add_library (${PROJECT_NAME} STATIC ${SRC_LIBICONV})
+add_library (${PROJECT_NAME} STATIC ${SRC_LIBICONV} ${SRC_LIBCHARSET})
 
 target_include_directories (${PROJECT_NAME}
   PRIVATE
@@ -93,7 +86,3 @@ target_compile_options (${PROJECT_NAME}
     -DIN_LIBRARY -DNO_XMALLOC -DHAVE_CONFIG_H
     -DENABLE_RELOCATABLE=1 -Dset_relocation_prefix=libiconv_set_relocation_prefix -Drelocate=libiconv_relocate 
   ) 
-
-
-find_library(LIBCHARSET libcharset ${CMAKE_BINARY_DIR}/externals/libiconv)
-target_link_libraries(${PROJECT_NAME} ${LIBCHARSET})

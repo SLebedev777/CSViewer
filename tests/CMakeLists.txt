@@ -13,7 +13,9 @@ list(APPEND SOURCES
 )
 
 # VERY IMPORTANT!!! THIS IS NEEDED THAT GTEST WILL NOT OVERRIDE MAIN PROJECT'S COMPILING&LINKING SETTINGS!
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+if (MSVC)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+endif()
 
 # Add source to this project's executable.
 add_executable (${BINARY} ${SOURCES})
