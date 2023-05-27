@@ -160,7 +160,7 @@ size_t ConsoleFrameView::renderRowWrapMode(CSVContainer::RowView row, const std:
 		{
 			cell_sizes_and_positions[c].first = Utf8StrLen(*cell_it);
 		}
-		if (layout_descr.need_last && c < m_frame.get().getNumCols())
+		if (layout_descr.need_last)
 		{
 			// move to last column cell in this row
 			while (std::next(cell_it) != row.end())
@@ -201,7 +201,7 @@ size_t ConsoleFrameView::renderRowWrapMode(CSVContainer::RowView row, const std:
 
 		total_width += renderGap(oss);
 
-		if (layout_descr.need_last && c < m_frame.get().getNumCols())
+		if (layout_descr.need_last)
 		{
 			// move to last column cell in this row
 			while (std::next(cell_it) != row.end())
