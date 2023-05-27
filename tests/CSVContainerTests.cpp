@@ -173,7 +173,7 @@ TEST(CSVContainerTests, CSVContainerRowIteratorCellIterator1)
 
 	std::vector<Row> result;
 
-	for (auto& row : frame)
+	for (auto row : frame)
 	{
 		Row result_row;
 		for (auto& cell : row)

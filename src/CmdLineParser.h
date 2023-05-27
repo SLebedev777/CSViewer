@@ -95,7 +95,7 @@ std::ostream& operator<<(std::ostream& os, std::optional<T> const& opt)
 }
 
 
-auto CmdLineOptionDescriptionVariantPrinter = [](const auto& obj) {
+inline auto CmdLineOptionDescriptionVariantPrinter = [](const auto& obj) {
 	static const std::string sep = ", ";
 	std::cout
 		<< "{ "
@@ -107,7 +107,7 @@ auto CmdLineOptionDescriptionVariantPrinter = [](const auto& obj) {
 		<< std::endl;
 };
 
-auto CmdLineOptionParseResultVariantPrinter = [](const auto& obj) {
+inline auto CmdLineOptionParseResultVariantPrinter = [](const auto& obj) {
 	static const std::string sep = ", ";
 	std::cout
 		<< "{ "

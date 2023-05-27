@@ -289,10 +289,10 @@ ICommandPtr MakeColsCommand(const CommandParseResult& cpr, CSVContainer* csv)
 	if (cpr.keywords_and_args.front().kw == "header")
 	{
 		CSVContainer::Frame header(csv, 0, 2);
-		for (auto& row : header)
+		for (auto row : header)
 		{
 			size_t index = 0;
-			for (auto& cell : row)
+			for (const auto& cell : row)
 			{
 				index_names.push_back({index, cell});
 				index++;
