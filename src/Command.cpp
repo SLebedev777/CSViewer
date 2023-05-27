@@ -1,6 +1,8 @@
 #include "Command.h"
 #include "FrameView.h"
+#if (WIN32)
 #include <conio.h>
+#endif
 #include <algorithm>
 
 
@@ -17,7 +19,12 @@ void QuitCommand::Execute()
 	std::cout << "Are you sure you want to quit? (Y/N)";
 	while (true)
 	{
+#if (WIN32)
 		char c = getch();
+#else
+		char c;
+		std::cin >> c;
+#endif
 		if (c == 'y' || c == 'Y')
 			throw std::runtime_error("Quitting application");
 		else if (c == 'n' || c == 'N')
@@ -97,6 +104,11 @@ ConsoleFrameViewOptionsReflection::ConsoleFrameViewOptionsReflection(ConsoleFram
 	{
 		[this]() { std::cout << "index: " << m_obj.is_print_row_index << std::endl; },
 		[this](const std::string& value) { m_obj.is_print_row_index = static_cast<bool>(std::stoi(value)); }
+	};
+	m_reflection["chunk_size"] =
+	{
+		[this]() { std::cout << "chunk_size: " << m_obj.chunk_size << std::endl; },
+		[this](const std::string& value) { m_obj.chunk_size = static_cast<size_t>(std::stoi(value)); }
 	};
 
 }

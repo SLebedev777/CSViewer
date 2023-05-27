@@ -5,6 +5,7 @@
 #include <string>
 #include <stdexcept>
 #include <limits>
+#include <array>
 #include "Range.h"
 
 extern const std::array<std::string, 3> SUPPORTED_INPUT_ENCODINGS;

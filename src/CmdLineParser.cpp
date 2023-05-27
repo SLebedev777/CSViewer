@@ -247,7 +247,11 @@ CSVLoadingSettings MakeSettingsByCmdLineArgs(const CmdLineArgsParseResult& cmd_l
 	// convert encoding string from cmd line arg to string that IConvConverter accepts
 	auto encoding_str2settings = [](const auto& str) {
 		std::string result;
+#if(WIN32)
 		std::transform(str.begin(), str.end(), std::back_inserter(result), ::std::toupper);
+#else
+		std::transform(str.begin(), str.end(), std::back_inserter(result), ::toupper);
+#endif
 		auto utf_index = result.find("UTF");
 		if (utf_index != std::string::npos)
 		{

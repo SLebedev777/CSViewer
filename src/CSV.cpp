@@ -6,11 +6,12 @@
 #include <iostream>
 #include <fstream>
 #include <array>
+#include <iterator>
 #include "CmdLineParser.h"
 
 
 
-static const std::array<std::string, 3> SUPPORTED_INPUT_ENCODINGS = { "UTF-8", "CP1251", "CP866" };
+const std::array<std::string, 3> SUPPORTED_INPUT_ENCODINGS = { "UTF-8", "CP1251", "CP866" };
 
 
 bool operator==(const CSVLoadingSettings& left, const CSVLoadingSettings& right)

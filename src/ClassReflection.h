@@ -14,7 +14,7 @@ template<typename Class>
 struct ClassReflection
 {
 	using getter = std::function<void()>;  // really it's not truly "getter", but "printer"
-	using setter = std::function<void(const std::string&)>;
+	using setter = std::function<void(const std::string&)>;  // another restriction - class member must support convertion from string
 
 	explicit ClassReflection(Class& obj)
 		: m_obj(obj)

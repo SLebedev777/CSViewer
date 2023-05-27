@@ -1,18 +1,21 @@
 #include "FrameView.h"
 #include "UTF8Utils.h"
 #include <iostream>
+#include <algorithm>
 #include <utility>
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
 #define VC_EXTRALEAN
+#define NOMINMAX
 #include <Windows.h>
+#include <conio.h>
 #elif defined __linux__
 #include <sys/ioctl.h>
 #endif // Windows/Linux
-#include <algorithm>
 #include <sstream>
 #include <numeric>
-#include <conio.h>
+
+
 
 namespace
 {
@@ -86,13 +89,13 @@ size_t ConsoleFrameView::renderCell(const Cell& cell, size_t actual_cell_width, 
 	{
 		if (m_options.is_wrap_mode)
 		{
-			size_t end = min(cell_size, start + actual_cell_width);
+			size_t end = std::min(cell_size, start + actual_cell_width);
 			oss << Utf8SubStr(cell, start, end - start);
 			return end;
 		}
 		else
 		{
-			size_t final_width = max(0, actual_cell_width - ellipsis_size);
+			size_t final_width = std::max(size_t(0), actual_cell_width - ellipsis_size);
 			oss << Utf8SubStr(cell, 0, final_width) << ellipsis;
 			return actual_cell_width;
 		}
@@ -225,7 +228,7 @@ void ConsoleFrameView::renderFrame()
 	std::vector<size_t> actual_col_widths;
 	std::transform(m_columnsMaxTextLength.begin(), m_columnsMaxTextLength.end(), std::back_inserter(actual_col_widths), 
 		[this](size_t w) {
-			return min(m_options.max_col_width, w);
+			return std::min(m_options.max_col_width, w);
 		});
 
 	auto layout_descr = m_colLayoutPolicyFunc(actual_col_widths, m_options.col_sep.size());
@@ -254,7 +257,7 @@ void ConsoleFrameView::renderFrame()
 
 	// render every row according to layout and wrap mode
 	size_t rows_in_chunk = 0;
-	for (auto& row : m_frame.get())
+	for (const auto& row : m_frame.get())
 	{
 		(*this.*pRenderRowFunc)(row, actual_col_widths, layout_descr, oss, m_options.is_print_row_index);
 		if (m_options.is_wrap_mode)
@@ -266,7 +269,12 @@ void ConsoleFrameView::renderFrame()
 			std::cout << oss.str() << std::endl;
 
 			std::cout << "Press any key to print next chunk or Escape to stop printing." << std::endl;
+#if (WIN32)
 			char c = getch();
+#else
+			char c;
+			std::cin >> c;
+#endif
 			if (c == 27)
 			{
 				renderShape();

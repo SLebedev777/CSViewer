@@ -1,6 +1,7 @@
 #pragma once
 #include "CSV.h"
 #include <functional>
+#include <memory>
 
 
 struct ColumnsLayoutDescription

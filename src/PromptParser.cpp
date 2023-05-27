@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <list>
 #include <numeric>
+#include <limits>
 
 
 const char COMMAND_ARG_RANGE_DELIMITER = ':';
