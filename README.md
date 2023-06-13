@@ -36,9 +36,9 @@ Arguments types:
 * integer (1, 777)
 * strings range (A:Z, "Dummy 1":"Dummy 5")
 * integers range (1:5)
-* key-value pair (A=1, 1=A, "column":"data")
+* key-value pair (A=1, 1=A, "column"="data")
 
-#### Available commands:  
+#### Available shell commands:  
 
 **h[ead]  [N]** - print first N rows  
 **t[ail]  [N]** - print last N rows  
