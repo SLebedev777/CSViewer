@@ -24,6 +24,9 @@ int main(int argc, char** argv)
 	{
 		auto args_parse_result = ParseCmdLineArgs(argc, argv);
 
+		if (csviewer_internal::IsHelpOptionExist(args_parse_result.options))
+			PrintCmdLineHelp();
+
 		std::cout << "Input filename: " << args_parse_result.input_filename << std::endl;
 
 		for (const auto& option : args_parse_result.options)

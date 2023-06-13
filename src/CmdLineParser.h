@@ -82,8 +82,13 @@ template <typename T>
 std::ostream& operator<<(std::ostream& os, const std::vector<T>& v)
 {
 	os << "[";
-	for (const auto& x : v)
-		os << x << ", ";
+	if (!v.empty())
+	{
+		auto it = v.begin();
+		for (; it - v.begin() < v.size() - 1; ++it)
+			os << *it << ", ";
+		os << *it;
+	}
 	os << "]";
 	return os;
 }
@@ -105,6 +110,18 @@ inline auto CmdLineOptionDescriptionVariantPrinter = [](const auto& obj) {
 		<< obj.allowed_values
 		<< " }"
 		<< std::endl;
+};
+
+inline auto CmdLineOptionDescriptionVariantHelpPrinter = [](const auto& obj) {
+	std::cout
+		<< "-"
+		<< obj.key << " - "
+		<< obj.hint << ".";
+	if (!obj.allowed_values.empty())
+	{
+		std::cout << " Allowed values: " << obj.allowed_values;
+	}
+	std::cout << std::endl;
 };
 
 inline auto CmdLineOptionParseResultVariantPrinter = [](const auto& obj) {
@@ -132,6 +149,8 @@ CmdLineArgsParseResult ParseCmdLineArgs(int argc, char** argv);
 
 // CSV settings factory function from cmd line args
 CSVLoadingSettings MakeSettingsByCmdLineArgs(const CmdLineArgsParseResult& cmd_line_args);
+
+void PrintCmdLineHelp();
 
 
 namespace csviewer_internal

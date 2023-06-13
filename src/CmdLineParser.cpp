@@ -201,36 +201,42 @@ CmdLineArgsParseResult ParseCmdLineArgs(int argc, char** argv)
 {
 	using namespace csviewer_internal;
 
-	if (argc < 2)
-		throw std::runtime_error("Too few command line arguments.");
-
 	std::vector<CmdLineOptionParseResultVariant> parsed_options;
 	std::string input_filename;
 
-	bool is_found_input_filename = false;
-	for (int i = 1; i < argc; i++)
+	try
 	{
-		std::string token_str(argv[i]);
-		OptionKey key;
-		if (IsTokenOption(token_str, key))
-		{
-			if (IsOptionExistByKey(parsed_options, key))
-				ThrowParseOptionException(token_str, "More than one option with the same key.");
+	if (argc < 2)
+		throw std::runtime_error("Too few command line arguments.");
 
-			auto&& parsed_option = ParseOption(token_str);
-			parsed_options.push_back(std::move(parsed_option));
-		}
-		else if (!is_found_input_filename)
+		bool is_found_input_filename = false;
+		for (int i = 1; i < argc; i++)
 		{
-			input_filename = std::move(token_str);
-			is_found_input_filename = true;
+			std::string token_str(argv[i]);
+			OptionKey key;
+			if (IsTokenOption(token_str, key))
+			{
+				if (IsOptionExistByKey(parsed_options, key))
+					ThrowParseOptionException(token_str, "More than one option with the same key.");
+
+				auto&& parsed_option = ParseOption(token_str);
+				parsed_options.push_back(std::move(parsed_option));
+			}
+			else if (!is_found_input_filename)
+			{
+				input_filename = std::move(token_str);
+				is_found_input_filename = true;
+			}
+			else
+				ThrowParseOptionException(token_str);
 		}
-		else
-			ThrowParseOptionException(token_str);
+		if (!is_found_input_filename && !IsHelpOptionExist(parsed_options))
+			throw std::runtime_error("Missing required parameter: input_filename");
 	}
-	if (!is_found_input_filename && !IsHelpOptionExist(parsed_options))
-		throw std::runtime_error("Missing required parameter: input_filename");
-
+	catch (std::runtime_error& ex)
+	{
+		throw std::runtime_error(std::string(ex.what()) + "\nPlease run csviewer -H for help.");
+	}
 	return CmdLineArgsParseResult{ parsed_options, input_filename};
  }
 
@@ -322,4 +328,14 @@ CSVLoadingSettings MakeSettingsByCmdLineArgs(const CmdLineArgsParseResult& cmd_l
 		}
 	}
 	return settings;
+}
+
+void PrintCmdLineHelp()
+{
+	std::cout << "CSViewer - console app for viewing CSV files." << std::endl;
+	std::cout << "Usage: csviewer <file> [options]" << std::endl;
+	std::cout << "Command line options: " << std::endl;
+	for (const auto& [option_key, option_var] : g_ValidOptions)
+		std::visit(CmdLineOptionDescriptionVariantHelpPrinter, option_var);
+	std::cout << std::endl;
 }
