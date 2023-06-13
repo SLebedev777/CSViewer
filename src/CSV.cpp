@@ -203,7 +203,10 @@ void CSVContainer::readCSV(const CSVLoadingSettings& settings)
 	while (std::getline(file, line))
 	{
 		++i;
-		
+
+		if (i <= m_settings.skip_first_lines)
+			continue;
+
 		try
 		{
 			std::string converted_line = conv.convert(line);
